@@ -59,5 +59,7 @@ Custom Julia Modules for use in Numerical Math, and String Manipulations
 *This module contains functions to be used for physics and chemistry related work.*
 
 **distime.jl:** Does a conversion for Distances over Time. Can work with...
+
 *Millimeters*, *Centimeters*, *Decimeters*, *Meters*, *Kilometers*, *Inches*, *Feet*, *Yards*, *Miles*.
+
 *Seconds*, *Minutes*, *Hours*, *Days*.
