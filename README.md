@@ -34,5 +34,30 @@ Custom Julia Modules for use in Numerical Math, and String Manipulations
 
 **Fibs.jl:** Finds the Nth Fibonacci number requested. Can either return a single value, or all the Fibonacci numbers up the requested Nth number.
 
+## jlstr.jl
+*This module contains functions mainly for operations on Strings or Arrays in general.*
 
+**Count.jl:** Counts the amount of times the supplied characters(s) occurs in the string.
 
+**rotR.jl:** Rotates the elements in an array the specified amount of places to the right.
+
+**rotL.jl:** Rotates the elements in an array the specified amount of places to the left.
+
+**slowSort.jl:** Sorts an array of numbers in nondecreasing order. Destroys the original array in the process. *Outperformed by Sort, please see below to use that instead*
+
+**Sort.jl:** Sorts an array of numbers in nondecreasing order. Returns the original array sorted.
+
+**Sinput.jl:** Prompts the user for input, and saves the input as a String.
+
+**Finput.jl:** Prompts the user for Float input, and saves the input to a variable.
+
+**Ninput.jl:** Prompts the user for Integer input, and saves the input to a variable.
+
+**alphasort.jl:** Alphabetically sorts an array. Returns the original array alphabetized.
+
+## jlphy.jl
+*This module contains functions to be used for physics and chemistry related work.*
+
+**distime.jl:** Does a conversion for Distances over Time. Can work with...
+*Millimeters*, *Centimeters*, *Decimeters*, *Meters*, *Kilometers*, *Inches*, *Feet*, *Yards*, *Miles*.
+*Seconds*, *Minutes*, *Hours*, *Days*.
