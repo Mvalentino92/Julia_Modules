@@ -317,4 +317,86 @@ module jlstr
 		return x #And return it!
 	end
 	#***End alphasort***
+
+	#***Start strcmp***
+
+	"""
+	```jldoctest
+	strcmp(String_1,String_2)
+	```
+	Compares two strings and returns a value specifying which is lower in alphabetical order. If String_1 is lower, returns -1, If String_2 is lower, return 1. If equal, returns 0.\n
+	**Note** This function does not differentiate between uppercase and lowercase characters.
+	# Example
+	```jldoctest
+	julia> a = "hello man"
+	       b = "hey"
+	       Verdict = strcmp(a,b)
+	       println(Verdict)
+	       -1
+	```
+	"""
+	function strcmp(str1,str2)
+		Shorter,Tracker = length(str1) <= length(str2) ? [length(str1),true] : [length(str2),false] # Checks which string has less characters.
+		Checker = 1  # Have to track which index to compare up to
+		while Checker <= Shorter #Only compare up to this Index
+			if Int(uppercase(str1[Checker])) < Int(uppercase(str2[Checker]))
+				return -1                                                         #Checking to see which string is lower alphabetically character by character
+			elseif Int(uppercase(str1[Checker])) > Int(uppercase(str2[Checker]))
+				return 1
+			else
+				Checker += 1        #If the characters are equal, keep going
+			end
+		end
+		if Tracker == true        #So if all the checked characters were equal.... If str1 was the shorter one, then its lower alphabetically
+			return -1
+		elseif Tracker == false  #Otherwise if str2 was the shorter one, then its lower alphabetically
+			return 1
+		else
+			return 0          #Otherwise they were equal, and they are the same string!
+		end
+	end
+
+	#***End strcmp***
+
+	#***Start Alpha***
+
+	"""
+	```jldoctest
+	Alpha(Array_to_be_Alphabetized)
+	```
+	This will sort the given array alphabetically. This function calls `strcmp`. To see how this function interprets characters and see `strcmp`.
+	# Example
+	```jldoctest
+	julia> Names = ["alexa","matthew","matt","al","zeke"]
+	       Alpha(Names)
+	       5-element Array{String,1}
+	       "al"
+	       "alexa"
+	       "matt"
+	       "matthew"
+	       "zeke"
+	```
+	"""
+	function Alpha(x)               #See Sort for an explanation of the code. This simply inserts the strcmp function at the point of evaluation during each iteration.
+		for i=1:length(x)-1       
+			Hold = x[i]
+			best = x[i]
+			Tracker = i
+			for j=(i+1):length(x)
+				if strcmp(x[j],best) == -1
+					best = x[j]
+					Tracker = j
+				end
+			end
+			if Tracker != i
+				x[i] = x[Tracker]
+				x[Tracker] = Hold
+			else
+				continue
+			end
+		end
+		return x
+	end
+
+	#***End Alpha***
 end
