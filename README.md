@@ -55,6 +55,10 @@ Custom Julia Modules for use in Numerical Math, and String Manipulations
 
 **alphasort.jl:** Alphabetically sorts an array. Returns the original array alphabetized.
 
+**strcmp.jl:** Compares the value of two strings, character by character and returns a value specifying which is lower in alphabetical order. Does not differentiate between upper and lowercase.
+
+**Alpha.jl:** Alphabetically sorts an array by calling strcmp. Far more efficient than alphasort, use this instead.
+
 ## jlphy.jl
 *This module contains functions to be used for physics and chemistry related work.*
 
