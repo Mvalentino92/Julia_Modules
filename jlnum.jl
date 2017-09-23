@@ -165,19 +165,19 @@ module jlnum
 	#***Start Lagrangian Interpolation***
 	"""
 	```jldoctest
-	Lagrange(x_data_points,y_data_points)
+	Lagrange(x_data_points,y_data_points,divide_spacing)
 	```
-	Interpolates points between the supplied data points. If N = length(x_data_points), this functin returns N*10 - 9 data points.\n
+	Interpolates points between the supplied data points. If N = length(x_data_points), this functin returns N*divide_spacing - (divide_spacing-1) data points.\n
 	Recommended for use with non chaotic type functions. 
 	# Example using data points from function x^2
 	```jldoctest
 	julia> x = [0,0.1,0.5,0.55,0.9,1.4,1.53,1.8,2]
 	       y = x.^2
-	       Interpolated_Points = Lagrange(x,y)
+	       Interpolated_Points = Lagrange(x,y,10)
 	       plot(x,Interpolated_Points) ---> Will produce a smoothed out plot of x^2
 	```
 	"""
-	function Lagrange(x,y)			#Function to interpolate more data points between existing data points
+	function Lagrange(x,y,divide_spacing)			#Function to interpolate more data points between existing data points
 		Left = 1			#I'm using 3 points per iteration to get values between those three points
 		Right = 3			#Setting variables for left and right indexing
 		InterpolationTicks = []
@@ -186,7 +186,7 @@ module jlnum
 			NEWX = x[Left:Right]		#Setting the boundaries for each interval for the x and y values
 			NEWY = y[Left:Right]
 			InitialSpacing = sum(diff(NEWX))/2	#Finding the mean of the spacing between the points of my interval
-			NewSpacing = InitialSpacing/10		#Getting a new reduced spacing
+			NewSpacing = InitialSpacing/divide_spacing	        #Getting a new reduced spacing
 			NEWX = convert(Array{Float64,1},NEWX)
 			LagInterval = NEWX[1]:NewSpacing:NEWX[end]	#Settng up the new intervel with spacing
 			HoldInterval = zeros(length(LagInterval))	#Array of zeros to hold the values
@@ -222,7 +222,7 @@ module jlnum
 			NEWX = x[Left:Right]
 			NEWY = y[Left:Right]
 			InitialSpacing = sum(diff(NEWX))/3
-			NewSpacing = InitialSpacing/10
+			NewSpacing = InitialSpacing/divide_spacing
 			NEWX = convert(Array{Float64,1},NEWX)
 			LagInterval = NEWX[1]:NewSpacing:NEWX[end]
 			HoldInterval = zeros(length(LagInterval))
@@ -582,5 +582,68 @@ module jlnum
 		end
 	end
 
-	#**End Fibs***
+	#***End Fibs***
+
+	#***Start Theta***
+	
+	"""
+	```jldoctest
+	Theta(x-component,y-component)
+	```
+	This function will take the x and y components of a vector, and return the angle theta of the vector with repsect to the positive x-axis in the counterclockwise direction.
+	# Example
+	```jldoctest
+	julia> x = 3
+	       y = 4
+	       angleTheta = Theta(x,y)
+	       println(angleTheta)
+	       53.13
+	```
+	"""
+	function Theta(x,y)
+		r = sqrt(x^2 + y^2)                                 
+		if (x >= 0 && y >= 0) || (x <= 0 && y >= 0)
+			Degrees = rad2deg(acos(x/r))                      #Depending on which quadrant the vector is in, will use a different approach
+		elseif x <= 0 && y <= 0                                   #to solve for degrees in counter clockwise direction with respect to positive x axis
+			Degrees = 360 - rad2deg(acos(x/r))
+		elseif x >= 0 && y <= 0
+			Degrees = 360 + rad2deg(asin(y/r))
+		else
+			println("You gave [0,0], no vector exists for that")
+			return
+		end
+		if Degrees == 360
+			return 0
+		else
+			return Degrees
+		end
+	end
+
+	#***End Theta***
+
+	#***Start NumDeriv****
+	
+	"""
+	```jldoctest
+	NumDeriv(x,y)
+	```
+	This function will return the numerical derivative of the supplied data points. The x data points must have equal spacing. Using Lagrangian Interpolation in order to return an array containing the same amount of data points as the original.
+	# EXAMPLE
+	```jldoctest
+	julia> x = 1:0.2:5
+	       f(x) = x.^2
+	       y = f(x)
+	       Deriv_y = NumDeriv(x,y)
+	```
+	"""
+	function NumDeriv(x,y)
+		newX,newY = Lagrange(x,y,2)            #Generates interpolated points between each existing value (exclusing the first, and last element)
+		dt = diff(x[1:2])[1]                   #Finds the spacing of the x data points
+		deleteSpots = 3:2:length(newY)-2       #In order to take the numerical derivative, we only need the interpolated generated points.
+		deleteat!(newY,deleteSpots)            #Delete all the original points
+		derivative_of_Y = diff(newY)/dt        #Take the numerical derivative
+		derivative_of_Y[1] = derivative_of_Y[1]*2           
+		derivative_of_Y[end] = derivative_of_Y[end]*2          #Fix the first and the last point (still will be the most inaccurate)
+		return derivative_of_Y
+	end
 end
