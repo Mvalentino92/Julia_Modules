@@ -6,7 +6,7 @@ Custom Julia Modules for use in Numerical Math, as well as useful functions for 
 
 **ArcLen:** Finds the length of a function between two points. 
 
-**RomInt:** Uses Romberg Integration to find the area under a curve. *Uses a function as parameter!*
+**RomInt:** Uses Romberg Integration to find the area under a curve. *Uses a function as a parameter!*
 
 **TrapZ:** Uses the Trapazoidal Rule to give the area under a curve. *Uses Data Points*
 
