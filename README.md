@@ -8,9 +8,9 @@ Custom Julia Modules for use in Numerical Math, as well as useful functions for 
 
 **RomInt:** Uses Romberg Integration to find the area under a curve. *Uses a function as a parameter!*
 
-**TrapZ:** Uses the Trapazoidal Rule to give the area under a curve. *Uses Data Points*
+**TrapZ:** Uses the Trapazoidal method to give the area under a curve. *Uses Data Points*
 
-**UnevenTrapZ:** Uses the Trapazoidal Rule to give the area under a curve. To be used when the data points are *NOT* evenly spaced. 
+**UnevenTrapZ:** Uses the Trapazoidal method to give the area under a curve. To be used when the data points are *NOT* evenly spaced. 
 
 **CumTrapZ:** Estimates the data points of the integral. Works well with polynomials. Only should be used for visualization of the shape of the integral. Plotting is strongly advisable. 
 
