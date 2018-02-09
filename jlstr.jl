@@ -348,11 +348,13 @@ module jlstr
 			end
 		end
 		if Tracker == true        #So if all the checked characters were equal.... If str1 was the shorter one, then its lower alphabetically
-			return -1
-		elseif Tracker == false  #Otherwise if str2 was the shorter one, then its lower alphabetically
+			if length(str1) == length(str2)
+				return 0
+			else 
+				return -1
+			end
+		else #Otherwise if str2 was the shorter one, then its lower alphabetically.
 			return 1
-		else
-			return 0          #Otherwise they were equal, and they are the same string!
 		end
 	end
 
