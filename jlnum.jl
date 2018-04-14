@@ -1,7 +1,7 @@
 module jlnum
 	#***Function to Compute the Arc Lenght, Decent Precision.***
 
-	import SymPy.diff
+	#using SymPy
 	"""
 	```jldoctest
 	ArcLen(Function,x0,xend)
@@ -645,5 +645,100 @@ module jlnum
 		derivative_of_Y[1] = derivative_of_Y[1]*2           
 		derivative_of_Y[end] = derivative_of_Y[end]*2          #Fix the first and the last point (still will be the most inaccurate)
 		return derivative_of_Y
+	end
+
+	#*****END NumDeriv**********
+
+	#*****Start ColZ************
+	"""
+	```jldoctest
+	ColZ(f(x,y),x0,xEnd,y0,yEnd,spacing)
+	```
+	Calculates the double integral of a function using a 3D TrapZ approach.
+
+	# Examples
+
+	```jldoctest
+	julia> f(x,y) = x*y^2
+	       volume = ColZ(f,0,2,0,1,1000)
+	       println(volume)
+	       0.66666
+	```
+	"""
+	function ColZ(f,x0,xEnd,y0,yEnd,spacing)
+		x = linspace(x0,xEnd,spacing)
+		y = linspace(y0,yEnd,spacing)
+		dx = x[2] - x[1]
+		dy = y[2] - y[1]
+
+		total = 0
+		for i = 1:length(y)
+			currentY = y[i]
+			sum = f(x[1],currentY)*dx*dy/2 + f(x[end],currentY)*dx*dy/2
+			if i == 1 || i == length(y)
+				sum /= 2
+			end
+			for j = 2:length(x) - 1
+				z = f(x[j],currentY)
+				if i == 1 || i == length(y)
+					sum += z*dx*dy/2
+				else sum += z*dx*dy
+				end
+			end
+			total += sum
+		end
+		return total
+	end
+
+	#*******END ColZ***************
+
+	#*******START Monte3D*********
+
+	"""
+	```jldoctest
+	Monte3D(f(x,y),x0,xEnd,y0,yEnd,spacing)
+	```
+	Calculates the double integral using Monte Carlo Integration
+
+	# Examples
+
+	```jldoctest
+	julia> f(x,y) = x*y^2
+	       volume = Monte3D(f,0,2,0,1,1000)
+	       println(volume)
+	       0.667234
+	```
+	"""
+	function Monte3D(f,x0,xEnd,y0,yEnd,spacing)
+		x = linspace(x0,xEnd,spacing)
+		y = linspace(y0,yEnd,spacing)
+		h = 0
+		for i = 1:length(x)
+			for j = 1:length(y)
+				current = f(x[i],y[j])
+				if current > h
+					h = current
+				end
+			end
+		end
+
+		l = xEnd - x0
+		w = yEnd - y0
+		box = l*w*h
+		total = spacing*spacing
+		count = 0
+
+		for i = 1:total
+			rX = rand()*l + x[1]
+			rY = rand()*w + y[1] 
+			rZ = rand()*h
+
+			z = f(rX,rY)
+			if rZ <= z
+				count += 1
+			end
+		end
+		volume = (count/total)*box
+		return volume
 	end
 end
