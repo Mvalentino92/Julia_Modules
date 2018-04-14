@@ -36,6 +36,10 @@ Custom Julia Modules for use in Numerical Math, as well as useful functions for 
 
 **NumDeriv:** Computes the numerical derivative of supplied data points. Uses Lagrangian interpolation to return a derivative with the same amount of data points as the original.
 
+**ColZ:** The 3D equivalent of TrapZ. Instead of using 2D rectangles, this function uses 3D columns to approximate the volume under the function 
+
+**Monte3D:** Uses Monte Carlo integration to approximate the volume under the function.  
+
 ## jlstr.jl
 *This module contains functions mainly for operations on Strings or Arrays in general.*
 
