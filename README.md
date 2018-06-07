@@ -12,7 +12,7 @@ Custom Julia Modules for use in Numerical Math, as well as useful functions for 
 
 **UnevenTrapZ:** Uses the Trapazoidal method to give the area under a curve. To be used when the data points are *NOT* evenly spaced. 
 
-**CumTrapZ:** Estimates the data points of the integral. Works well with polynomials. Only should be used for visualization of the shape of the integral. Plotting is strongly advisable. 
+**CumTrapZ:** Estimates the data points of the integral. Only should be used for visualization of the shape of the integral. Plotting is strongly advisable. 
 
 **Lagrange:** Uses the Lagrangian technique to interpolate between data points. 
 
