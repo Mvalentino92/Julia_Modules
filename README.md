@@ -20,7 +20,7 @@ Custom Julia Modules for use in Numerical Math, as well as useful functions for 
 
 **TaylorEval:** Evaluates a vector of Taylor Series coefficients at the supplied data points. *Must specify the point of expansion at which the coefficients were obtained.*
 
-**PolyVecEval:*** Evaluates a vector as a single variable polynomial at the supplied value.
+**PolyVecEval:** Evaluates a vector as a single variable polynomial at the supplied value.
 
 **PolyForm:** Returns a vector of the specified order, with the coefficients being subsequent powers of the supplied value.
 
