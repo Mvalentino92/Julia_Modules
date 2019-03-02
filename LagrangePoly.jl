@@ -42,12 +42,14 @@ function lag(xs,ys)
 	m = n - 1
 	mat = zeros(n,n)
 	for i = 1:n
-		target = deepcopy(xs) #Deep copy
-		deleteat!(target,i) #Delete the current element
-		map!(g,target,target) #Flip all the signs, for passing to choose func
-		mat[i,:] = totalChoose(target) #Find total polynomial for row
-		denom = mapreduce(x->xs[i] + x,*,target) # Get denominator
+		current = splice!(xs,i) # Take out first element
+		map!(g,xs,xs) #Flip all the signs, for passing to choose func
+		mat[i,:] = totalChoose(xs) #Find total polynomial for row
+		denom = mapreduce(x->current + x,*,xs) # Get denominator
 		mat[i,:] = map(x->x*ys[i]/denom,mat[i,:]) #Multiply by y value, and divide by denom
+		map!(g,xs,xs) #Reflip elements, work is done
+		splice!(xs,i:i-1,current) #Add element back
+		println(mat[i,:])
 	end
 	return reduce(+,mat,dims=1) #Reduce row wise, to add polys
 end
