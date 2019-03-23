@@ -130,8 +130,10 @@ allBoards = permutations(Array{Int8,1}([0,1,2,3,4,5,6,7,8]))
 allBoards = filter(isSolvable,allBoards)
 
 for board in shuffle(allBoards)
+	dict = Dict()
 	op = PriorityQueue() #Initialize OPEN (priority queue)
 	op[Node(board,0,nothing,nothing)] = α*0 + β*g(board) #Place start node on OPEN
+	dict[board] = (0,nothing)
 	cl = Array{Array{Int8,1},1}() #Initialize CLOSED
 	
 	head = nothing
@@ -146,19 +148,19 @@ for board in shuffle(allBoards)
 		children = genChildren(head.board) #Expand parent/head to children (adj nodes)
 		for c in children
 			if c in cl continue end #If adj_node (child) is on CLOSED, discard
-			exists = false
-			for n in op
-				if n.first.board == c #if adj_node is in the Open 
-					exists = true
-					if currentDepth < n.first.depth #If current depth is better than OPEN depth 
-						op[n.first] = α*currentDepth + β*g(c)	
-						n.first.depth = currentDepth
-						n.first.parent = head
-					end                                               
-					break
+			(depth,parent) = get(dict,c,(-1,nothing))
+			if depth == -1
+				op[Node(c,currentDepth,head,nothing)] = α*currentDepth + β*g(c) #if not in OPEN, add
+				dict[board] = (currentDepth,head)
+			else
+				if currentDepth < depth
+					n = getkey(op,Node(c,depth,parent),0)
+					op[n] = α*currentDepth + β*g(c)	
+					dict[c] = (currentDepth,head)
+					n.depth = currentDepth
+					n.parent = head
 				end
 			end
-			if !exists op[Node(c,currentDepth,head,nothing)] = α*currentDepth + β*g(c) end #if not in OPEN, add
 		end
 	end
 	print("Press ENTER to begin next solution: ")
