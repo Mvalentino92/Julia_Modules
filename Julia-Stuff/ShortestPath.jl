@@ -88,7 +88,10 @@ builder = root
 #5) Current = nothing, were done
 while current != nothing
 	global root,current,builder,sol
-	if current.node == dest sol = current end #Update with new solution
+	if current.node == dest 
+		sol = current #Update with new solution
+		current = current.child
+	end
 	children = graph[current.node]
 	for cdl in children
 		if inClosed(root,current.child,cdl[1]) continue end #If we visited here, continue
