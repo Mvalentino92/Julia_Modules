@@ -51,11 +51,11 @@ function linkSolution(sol::Node)
 end
 
 #Print the solution
-function printSol(root::Node,dest)
+function printSol(root::Node)
 	current = root
 	cost = 0
 	while true
-		if current.node == dest
+		if current.child == nothing
 			println("$(current.node)")
 			cost = current.cost
 			break
@@ -89,9 +89,9 @@ builder = root
 while current != nothing
 	global root,current,builder,sol
 	if current.node == dest 
-		sol = current #Update with new solution
-		current = current.child
-		continue
+		current.child = nothing #Kill potential children
+		sol = current #Update with solution and break
+		break
 	end
 	children = graph[current.node]
 	for cdl in children
@@ -119,4 +119,4 @@ end
 
 #Print results
 #println("\n\n\n\n\n\n")
-printSol(linkSolution(sol),dest)
+printSol(linkSolution(sol))
