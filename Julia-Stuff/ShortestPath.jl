@@ -11,19 +11,19 @@ end
 #Creates the graph from user input
 function createGraph()
 	retval = Dict{String,Array{Tuple{String,Float64},1}}()
-	print("How many nodes will be on the graph?: ")
+	#print("How many nodes will be on the graph?: ")
 	size = parse(Int64,readline())
 	for i in 1:size
-		print("Enter new node: ")
+	#	print("Enter new node: ")
 		k = readline()
 		v = Array{Tuple{String,Float64},1}()
-		println("Please enter adjacent nodes and their distance in the format \"node distance\".")
-		println("Input \"stop\" when you are done.")
-		print("node distance: ")
+	#	println("Please enter adjacent nodes and their distance in the format \"node distance\".")
+	#	println("Input \"stop\" when you are done.")
+	#	print("node distance: ")
 		next = split(readline())
 		while next[1] != "stop"
 			push!(v,(next[1],parse(Float64,next[2])))
-			print("node distance: ")
+	#		print("node distance: ")
 			next = split(readline())
 		end
 		retval[k] = v
@@ -51,11 +51,11 @@ function linkSolution(sol::Node)
 end
 
 #Print the solution
-function printSol(root::Node)
+function printSol(root::Node,dest)
 	current = root
 	cost = 0
 	while true
-		if current.child == nothing
+		if current.node == dest
 			println("$(current.node)")
 			cost = current.cost
 			break
@@ -67,9 +67,9 @@ end
 
 #Init, ask for start and destination and solve problem
 graph = createGraph()
-print("Enter starting node: ")
+#print("Enter starting node: ")
 start = readline()
-print("Enter destination node: ")
+#print("Enter destination node: ")
 dest = readline()
 
 #Init updated solution node, and declare root node with 3 pointers to represent open and closed list
@@ -82,7 +82,7 @@ builder = root
 #1) Create all the children
 #2) If child exists on closed list (represented by root -> current), dont add
 #3) If child exists of open list (represented by current -> builder):
-#   - Replace distance and parents if new distance to this node is shorter
+#   - Replace distance and parent if new distance to this node is shorter
 #   - Otherwise, dont add
 #4) If destination node is reached: update sol
 #5) Current = nothing, were done
@@ -112,5 +112,7 @@ while current != nothing
 	end
 	current = current.child #Visit next node
 end
-println("\n\n\n\n\n\n")
-printSol(linkSolution(sol))
+
+#Print results
+#println("\n\n\n\n\n\n")
+printSol(linkSolution(sol),dest)
