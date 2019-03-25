@@ -1,6 +1,14 @@
 ## Julia-Stuff:
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 <br>Writing out some of the algorithms myself as I go along for practice. Might throw some random Julia files in here too, that arent insprired or from the book, hence the name "Julia_Stuff"
+<br><br>
+**EightPuzzle.jl:** Solves the EightPuzzle problem using the A* algorithm.
+
+**NodeStuff.jl:** Practice with making custom classes in Julia. Just wrote most a Doubly LinkedList, nothing spectacular.
+
+**Lagrange.jl:** Implements Lagrange interpolation for any amount of points. Very silly to give it a lot of points, as a polynomial with a high order is wildly unstable. But I did this cool way to multiply all the (x-?)(x+?)(x+?)...(x-?) together using the Choose function. So there was that.
+
+**ShortestPath.jl:** Uses Dijkstras Algorithm to calculate the shortest path. I store the Graph as a Dictionary. Prints the path and the cost.
 
 # Julia_Modules
 Custom Julia Modules for use in Numerical Math, as well as useful functions for general programming.
