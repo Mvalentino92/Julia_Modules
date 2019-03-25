@@ -1,4 +1,4 @@
-## Julia_Stuff:
+## Julia-Stuff:
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 <br>Writing out some of the algorithms myself as I go along for practice. Might throw some random Julia files in here too, that arent insprired or from the book, hence the name "Julia_Stuff"
 
