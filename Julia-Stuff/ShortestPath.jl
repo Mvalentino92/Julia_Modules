@@ -84,7 +84,7 @@ builder = root
 #3) If child exists of open list (represented by current -> builder):
 #   - Replace distance and parent if new distance to this node is shorter
 #   - Otherwise, dont add
-#4) If destination node is reached: update sol
+#4) If destination node is reached: update sol and exit
 #5) Current = nothing, were done
 while current != nothing
 	global root,current,builder,sol
