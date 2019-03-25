@@ -91,6 +91,7 @@ while current != nothing
 	if current.node == dest 
 		sol = current #Update with new solution
 		current = current.child
+		continue
 	end
 	children = graph[current.node]
 	for cdl in children
