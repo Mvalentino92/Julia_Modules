@@ -1,3 +1,7 @@
+## Julia_Stuff:
+Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
+<br>Writing out some of the algorithms myself as I go along for practice. Might throw some random Julia files in here too, that arent insprired or from the book, hence the name "Julia_Stuff"
+
 # Julia_Modules
 Custom Julia Modules for use in Numerical Math, as well as useful functions for general programming.
 
