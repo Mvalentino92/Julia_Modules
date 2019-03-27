@@ -2,6 +2,8 @@
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 <br>Writing out some of the algorithms myself as I go along for practice. Might throw some random Julia files in here too, that arent insprired or from the book, hence the name "Julia_Stuff"
 <br><br>
+**DeviseSum.jl:** Given a target number n and a set of numbers N, this returns a sum of the numbers from N (repeats allowed) that result in n if possible. For instance n = 17, N = {2,5,7}. Solution = 2 + 5 + 5 + 5
+
 **EightPuzzle.jl:** Solves the EightPuzzle problem using the A* algorithm.
 
 **NodeStuff.jl:** Practice with making custom classes in Julia. Just wrote most a Doubly LinkedList, nothing spectacular.
