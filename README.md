@@ -10,6 +10,8 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 
 **Lagrange.jl:** Implements Lagrange interpolation for any amount of points. Very silly to give it a lot of points, as a polynomial with a high order is wildly unstable. But I did this cool way to multiply all the (x-?)(x+?)(x+?)...(x-?) together using the Choose function. So there was that.
 
+**ShooterMethods.jl:** Functions for doing Eulers, Midpoint, and RK4. Supports RK4 with systems of equations. And a function for plotting each method against each other and the True Values.
+
 **ShortestPath.jl:** Uses Dijkstras Algorithm to calculate the shortest path. I store the Graph as a Dictionary. Prints the path and the cost.
 
 # Julia_Modules
