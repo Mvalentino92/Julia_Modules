@@ -54,7 +54,8 @@ end
 #RungeKutta ([Functions],tspan,[Y0],j)
 function RungeKutta(F::Array{Function,1},tspan::Tuple{Float64,Float64},Y0::Array{Float64,1},h::Float64)
 	#Init time and return vals
-	t = collect(tspan[1]:h:tspan[2]) #Vector t
+	n = ceil((tspan[2] - tspan[1])/h)
+	t = LinRange(tspan[1],tspan[2],n) #Vector t
 	len = length(t) #rows
 	dim = length(Y0) #cols
 	Y = zeros(Float64,len,dim) #Return values
