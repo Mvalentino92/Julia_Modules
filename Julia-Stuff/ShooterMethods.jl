@@ -52,7 +52,9 @@ function RK4(f::Function,tspan::Tuple{Float64,Float64},y0::Float64,h::Float64)
 end
 
 #N Order Boundary Value Problem, calls RungeKutta
-function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},X0::Array{Float64,1},Y0::Array{Float64,1},h::Float64)
+function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
+	     X0::Array{Float64,1},Y0::Array{Float64,1},h::Float64)
+
 	#Get the order, and construct identity matrix with alpha as the first element
 	order = length(Y0)
 	idmat = Matrix{Float64}(I,order,order)
@@ -64,7 +66,7 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},X0::Array{Float6
 
 	#Use RungeKutta to populate matrix
 	for i = 1:order
-		(t,Ycur) = RungeKutta(F,tspan,idmat[:,i],h)
+		(_,Ycur) = RungeKutta(F,tspan,idmat[:,i],h)
 		Ys[:,i] = Ycur[:,1]
 	end
 
@@ -85,7 +87,6 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},X0::Array{Float6
 		for i = 1:order-1
 			Cindex[i] = Int64(ceil((X0[i+1] - tspan[1])/dt))
 		end
-		println(Cindex)
 
 		#Get A
 		for i = 1:order-1
@@ -94,13 +95,10 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},X0::Array{Float6
 
 		#Get B
 		for i = 1:order-1
-			println(Ys[:,1][Cindex[i]])
 			b[i] = Y0[i+1] - Ys[:,1][Cindex[i]]
 		end
 
 		#Get x
-		println(A)
-		println(b)
 		x = inv(A)*b
 
 		#Fill in rest of C
