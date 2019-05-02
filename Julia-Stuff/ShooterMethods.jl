@@ -84,8 +84,9 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 		A = zeros(Float64,order-1,order-1)
 		b = zeros(Float64,order-1)
 		Cindex = zeros(Int64,order-1)
-		for i = 1:order-1
-			Cindex[i] = Int64(ceil((X0[i+1] - tspan[1])/dt))
+		Cindex[end] = length(t)
+		for i = 1:order-2
+			Cindex[i] = Int64(round((X0[i+1] - tspan[1])/dt))
 		end
 
 		#Get A
