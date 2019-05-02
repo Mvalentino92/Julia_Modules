@@ -51,11 +51,75 @@ function RK4(f::Function,tspan::Tuple{Float64,Float64},y0::Float64,h::Float64)
 	return (t,y)
 end
 
+#N Order Boundary Value Problem, calls RungeKutta
+function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},X0::Array{Float64,1},Y0::Array{Float64,1},h::Float64)
+	#Get the order, and construct identity matrix with alpha as the first element
+	order = length(Y0)
+	idmat = Matrix{Float64}(I,order,order)
+	idmat[1] = Y0[1] 
+
+	#Create matrix of Ys values
+	len = Int64(ceil((tspan[2] - tspan[1])/h))
+	Ys = zeros(Float64,len,order)
+
+	#Use RungeKutta to populate matrix
+	for i = 1:order
+		(t,Ycur) = RungeKutta(F,tspan,idmat[:,i],h)
+		Ys[:,i] = Ycur[:,1]
+	end
+
+	#Get all the c constants, c1 = 1 and t and dt
+	C = ones(Float64,order)
+	n = ceil((tspan[2] - tspan[1])/h)
+	t = collect(LinRange(tspan[1],tspan[2],Int64(n)))
+	dt = t[2] - t[1]
+
+	#If the order is 2, solve for c2 manually
+	#Otherwise, put everything in a matrix and solve (Using Ax = b)
+	if order == 2
+		C[2] = (Y0[2] - Ys[end,1])/Ys[end,2]
+	else #Need to get spacing for t, and find indices for all Y0's
+		A = zeros(Float64,order-1,order-1)
+		b = zeros(Float64,order-1)
+		Cindex = zeros(Int64,order-1)
+		for i = 1:order-1
+			Cindex[i] = Int64(ceil((X0[i+1] - tspan[1])/dt))
+		end
+		println(Cindex)
+
+		#Get A
+		for i = 1:order-1
+			A[:,i] = map(x -> Ys[:,i+1][x],Cindex)
+		end
+
+		#Get B
+		for i = 1:order-1
+			println(Ys[:,1][Cindex[i]])
+			b[i] = Y0[i+1] - Ys[:,1][Cindex[i]]
+		end
+
+		#Get x
+		println(A)
+		println(b)
+		x = inv(A)*b
+
+		#Fill in rest of C
+		C[2:end] = x
+	end
+
+	#Get true y value and return
+	y = zeros(Float64,len)
+	for i = 1:order
+		y += C[i]*Ys[:,i]
+	end
+	return (t,y)
+end
+
 #RungeKutta ([Functions],tspan,[Y0],j)
 function RungeKutta(F::Array{Function,1},tspan::Tuple{Float64,Float64},Y0::Array{Float64,1},h::Float64)
 	#Init time and return vals
 	n = ceil((tspan[2] - tspan[1])/h)
-	t = LinRange(tspan[1],tspan[2],n) #Vector t
+	t = LinRange(tspan[1],tspan[2],Int64(n)) #Vector t
 	len = length(t) #rows
 	dim = length(Y0) #cols
 	Y = zeros(Float64,len,dim) #Return values
