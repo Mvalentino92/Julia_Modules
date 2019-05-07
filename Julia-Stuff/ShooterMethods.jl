@@ -60,8 +60,10 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 	idmat = Matrix{Float64}(I,order,order)
 	idmat[1] = Y0[1] 
 
-	#Create matrix of Ys values
-	len = Int64(ceil((tspan[2] - tspan[1])/h))
+	#Create matrix of Ys values, and get t
+	len = Int64(ceil((tspan[2] - tspan[1])/h)) + 1
+	t = collect(LinRange(tspan[1],tspan[2],len))
+	h = t[2] - t[1]
 	Ys = zeros(Float64,len,order)
 
 	#Use RungeKutta to populate matrix
@@ -70,11 +72,8 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 		Ys[:,i] = Ycur[:,1]
 	end
 
-	#Get all the c constants, c1 = 1 and t and dt
+	#Get all the c constants, c1 = 1
 	C = ones(Float64,order)
-	n = ceil((tspan[2] - tspan[1])/h)
-	t = collect(LinRange(tspan[1],tspan[2],Int64(n)))
-	dt = t[2] - t[1]
 
 	#If the order is 2, solve for c2 manually
 	#Otherwise, put everything in a matrix and solve (Using Ax = b)
@@ -86,7 +85,7 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 		Cindex = zeros(Int64,order-1)
 		Cindex[end] = length(t)
 		for i = 1:order-2
-			Cindex[i] = Int64(round((X0[i+1] - tspan[1])/dt))
+			Cindex[i] = Int64(round((X0[i+1] - tspan[1])/h))
 		end
 
 		#Get A
@@ -109,6 +108,7 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 	#Get true y value and return
 	y = zeros(Float64,len)
 	for i = 1:order
+		println(Ys[:,i])
 		y += C[i]*Ys[:,i]
 	end
 	return (t,y)
@@ -117,9 +117,9 @@ end
 #RungeKutta ([Functions],tspan,[Y0],j)
 function RungeKutta(F::Array{Function,1},tspan::Tuple{Float64,Float64},Y0::Array{Float64,1},h::Float64)
 	#Init time and return vals
-	n = ceil((tspan[2] - tspan[1])/h)
-	t = LinRange(tspan[1],tspan[2],Int64(n)) #Vector t
-	len = length(t) #rows
+	len = Int64(ceil((tspan[2] - tspan[1])/h)) + 1
+	t = collect(LinRange(tspan[1],tspan[2],len)) #Vector t
+	h = t[2] - t[1] #New h if applicable
 	dim = length(Y0) #cols
 	Y = zeros(Float64,len,dim) #Return values
 
