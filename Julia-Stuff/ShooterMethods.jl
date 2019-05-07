@@ -34,8 +34,10 @@ end
 #RK4 (Function,tspan,y0,h)
 function RK4(f::Function,tspan::Tuple{Float64,Float64},y0::Float64,h::Float64)
 	#Init condintions
-	t = collect(tspan[1]:h:tspan[2])
-	y = zeros(Float64,length(t))
+	len = Int64(ceil((tspan[2] - tspan[1])/h)) + 1
+	t = collect(LinRange(tspan[1],tspan[2],len)) #Vector t
+	h = t[2] - t[1] #New h if applicable
+	y = zeros(Float64,len)
 	y[1] = y0
 
 	#Perform RK4 steps
