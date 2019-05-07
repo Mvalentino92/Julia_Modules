@@ -65,7 +65,6 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 	#Create matrix of Ys values, and get t
 	len = Int64(ceil((tspan[2] - tspan[1])/h)) + 1
 	t = collect(LinRange(tspan[1],tspan[2],len))
-	h = t[2] - t[1]
 	Ys = zeros(Float64,len,order)
 
 	#Use RungeKutta to populate matrix
@@ -73,6 +72,7 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 		(_,Ycur) = RungeKutta(F,tspan,idmat[:,i],h)
 		Ys[:,i] = Ycur[:,1]
 	end
+	h = t[2] - t[1] #Update h after RungeKutta
 
 	#Get all the c constants, c1 = 1
 	C = ones(Float64,order)
