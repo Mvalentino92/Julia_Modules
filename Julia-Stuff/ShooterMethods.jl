@@ -53,8 +53,79 @@ function RK4(f::Function,tspan::Tuple{Float64,Float64},y0::Float64,h::Float64)
 	return (t,y)
 end
 
+#Non-Linear Boundary Value Problem, calls RungeKutta and using Bisection method
+function NLBVPB(F::Array{Function,1},tspan::Tuple{Float64,Float64},Y0::Array{Float64,1},Tau::Tuple{Float64,Float64},h::Float64,tol::Float64)
+	#Set target and initial taus
+	target = Y0[2]
+	tauA = Tau[1]
+	tauB = Tau[2]
+	tauX = (tauA + tauB)/2
+
+	#Get function values for all taus
+	(t,y) = RungeKutta(F,tspan,[Y0[1],tauA],h)
+	fA = y[end,1] - target
+	(t,y) = RungeKutta(F,tspan,[Y0[1],tauB],h)
+	fB = y[end,1] - target
+	(t,y) = RungeKutta(F,tspan,[Y0[1],tauX],h)
+	fX = y[end,1] - target
+
+	#If fA and fB arent "opposite signs" return error
+	if fA*fB > 0
+		return (0.0,0.0,0.0)
+	end
+
+	#Otherwise begin bisection method
+	while abs(fX) > tol
+		if fA*fX > 0
+			tauA = tauX
+			fA = fX
+			tauX = (tauA + tauB)/2
+			(t,y) = RungeKutta(F,tspan,[Y0[1],tauX],h)
+			fX = y[end,1] - target
+		else
+			tauB = tauX
+			fB = fX
+			tauX = (tauA + tauB)/2
+			(t,y) = RungeKutta(F,tspan,[Y0[1],tauX],h)
+			fX = y[end,1] - target
+		end
+	end
+	return (t,y[:,1],tauX)
+end
+
+#Non-Linear boundary value problem using Secant method
+function NLBVPS(F::Array{Function,1},tspan::Tuple{Float64,Float64},Y0::Array{Float64,1},Tau::Tuple{Float64,Float64},h::Float64,tol::Float64)
+	#Set target and initial taus
+	target = Y0[2]
+	tauA = Tau[1]
+	tauB = Tau[2]
+
+	#Get function values for all taus
+	(t,y) = RungeKutta(F,tspan,[Y0[1],tauA],h)
+	fA = y[end,1] - target
+	(t,y) = RungeKutta(F,tspan,[Y0[1],tauB],h)
+	fB = y[end,1] - target
+
+	#Otherwise begin secant method
+	for i = 1:1000
+		m = (tauB - tauA)/(fB - fA)
+		tauX = tauB - fB*m
+		(t,y) = RungeKutta(F,tspan,[Y0[1],tauX],h)
+		fX = y[end,1] - target
+		if abs(tauX - tauB) < tol
+			return (t,y[:,1],tauX)
+		else
+			tauA = tauB
+			fA = fB
+			tauB = tauX
+			fB = fX
+		end
+	end
+	return (0.0,0.0,0.0)
+end
+
 #N Order Boundary Value Problem, calls RungeKutta
-function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
+function BVP(F1::Array{Function,1},F2::Array{Function,1},tspan::Tuple{Float64,Float64},
 	     X0::Array{Float64,1},Y0::Array{Float64,1},h::Float64)
 
 	#Get the order, and construct identity matrix with alpha as the first element
@@ -67,9 +138,13 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 	t = collect(LinRange(tspan[1],tspan[2],len))
 	Ys = zeros(Float64,len,order)
 
-	#Use RungeKutta to populate matrix
-	for i = 1:order
-		(_,Ycur) = RungeKutta(F,tspan,idmat[:,i],h)
+	#Use RungeKutta for y1 (gets r(x))
+	(_,Ycur) = RungeKutta(F1,tspan,idmat[:,1],h)
+	Ys[:,1] = Ycur[:,1]
+
+	#Use RungeKutta to populate matrix for rest of y's
+	for i = 2:order
+		(_,Ycur) = RungeKutta(F2,tspan,idmat[:,i],h)
 		Ys[:,i] = Ycur[:,1]
 	end
 	h = t[2] - t[1] #Update h after RungeKutta
@@ -110,7 +185,6 @@ function BVP(F::Array{Function,1},tspan::Tuple{Float64,Float64},
 	#Get true y value and return
 	y = zeros(Float64,len)
 	for i = 1:order
-		println(Ys[:,i])
 		y += C[i]*Ys[:,i]
 	end
 	return (t,y)
