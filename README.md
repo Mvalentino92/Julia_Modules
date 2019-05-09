@@ -14,7 +14,7 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 
 **QuasiNewton.jl:** N-dimensional root finding method using a numerically approximated Jacobian matrix.
 
-**ShooterMethods.jl:** Functions for doing Eulers, Midpoint, and RK4. Supports RK4 with systems of equations. And a function for plotting each method against each other and the True Values.
+**ShooterMethods.jl:** Functions for solving ODE's both IVP's and BVP's. Linear and Non-Linear.
 
 **ShortestPath.jl:** Uses Dijkstras Algorithm to calculate the shortest path. I store the Graph as a Dictionary. Prints the path and the cost.
 
