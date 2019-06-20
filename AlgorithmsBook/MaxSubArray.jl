@@ -34,16 +34,16 @@ end
 
 #Helper
 function crossOver(arr::Array{Int64,1},s::Int64,mid::Int64,t::Int64)
-	leftMax = arr[mid]
-	left = leftMax
-	for i = mid-1:-1:s
+	leftMax = -Inf
+	left = 0
+	for i = mid:-1:s
 		left += arr[i]
 		leftMax = left > leftMax ? left : leftMax
 	end
 
-	rightMax = arr[mid+1]
-	right = rightMax
-	for i = mid+2:t
+	rightMax = -Inf
+	right = 0
+	for i = mid+1:t
 		right += arr[i]
 		rightMax = right > rightMax ? right : rightMax
 	end
