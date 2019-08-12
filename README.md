@@ -8,6 +8,8 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 
 **Genetic.jl:** First try at a genetic algorithm. Trying to finding the global minimum of a function (ideally one that has many local minima, like the one I tested against). Seems to work well, definitely want to do more of these.
 
+**IterChoose.jl:** Iterative version of the Choose function.
+
 **NodeStuff.jl:** Practice with making custom classes in Julia. Just wrote most a Doubly LinkedList, nothing spectacular.
 
 **Lagrange.jl:** Implements Lagrange interpolation for any amount of points. Very silly to give it a lot of points, as a polynomial with a high order is wildly unstable. But I did this cool way to multiply all the (x-?)(x+?)(x+?)...(x-?) together using the Choose function. So there was that.
