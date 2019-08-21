@@ -20,7 +20,7 @@ class GeneticComparator implements Comparator<Phenotype>
 	}
 }
 
-public class GeneticKnapSack
+public class KnapSack
 {
 	//Max of two values
 	public static int max(int a, int b) {return a > b ? a : b;}
@@ -98,6 +98,13 @@ public class GeneticKnapSack
 		return retval;
 	}
 			
+	public static int pickParent2(double[] wheel)
+	{
+		double rand = Math.random();
+		int i = wheel.length - 1;
+		while(i > -1 && wheel[i] >= rand) i--;
+		return i == -1 ? 0 : i;
+	}
 
 	public static int breed(boolean[][] population,int capacity, int[][] items)
 	{
@@ -105,11 +112,21 @@ public class GeneticKnapSack
 		for(int i = 0; i < pop.length; i++) pop[i] = new Phenotype(population[i],fitness(population[i], capacity, items));
 		Arrays.sort(pop,new GeneticComparator());
 
+		//Added here
+		double fitnessSum = 0.0;
+		for(int i = 0; i < pop.length; i++) fitnessSum += pop[i].fitness;
+		double[] wheel = new double[pop.length];
+		wheel[0] = pop[0].fitness/fitnessSum;
+		for(int i = 1; i < wheel.length; i++) wheel[i] = pop[i].fitness/fitnessSum + wheel[i-1];
+
 		int max = Integer.MIN_VALUE;
 		for(int i = 0; i < population.length; i++)
 		{
-			int p1 = pickParent((int)(Math.random()*population.length),population.length-1);
-			int p2 = pickParent((int)(Math.random()*population.length),population.length-1);
+			int p1 = pickParent2(wheel);
+			int p2 = pickParent2(wheel);
+
+			//int p1 = pickParent((int)(Math.random()*population.length),population.length-1);
+			//int p2 = pickParent((int)(Math.random()*population.length),population.length-1);
 
 			population[i] = recombine(pop[p1].pheno,pop[p2].pheno);
 			max = Math.max(fitness(population[i],capacity,items),max);
@@ -207,9 +224,9 @@ public class GeneticKnapSack
 	//Solves the knapsack problem
 	public static void main(String[] args)
 	{
-		int capacity = 1000;
+		int capacity = 10000;
 		int numItems = capacity/10;
-		int popSize = 100;
+		int popSize = 250;
 		int[][] items = new int[2][numItems];
 		for(int i = 0; i < items[0].length; i++) 
 		{
