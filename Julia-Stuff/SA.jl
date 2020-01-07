@@ -5,7 +5,6 @@ Maybe = Union{Float64,Nothing}
 # Some constants
 const MAX_ITER = 1e4
 const MAX_FE = 1e6
-const MAX_CONV = 1000
 
 # Simple exponential decay
 # ps[1]: α, exponential decay constant
@@ -21,9 +20,9 @@ function linear(T::Float64,ps::Array{Float64,1}) return T - ps[1] end
 # 2) Maximum number of iterations
 # 3) Temperature reaching 0 or below
 # 4) Not seeing improvement in recent iterations
-function stoppingCriteria(iter::Int64,fe::Int64,T::Float64,convIter::Int64)
-	if convIter > Inf
-		println("Stopping because max convergence count of ",convIter," was achieved")
+function stoppingCriteria(iter::Int64,fe::Int64,T::Float64,converged::Bool)
+	if converged
+		println("Stopping because convergence was achieved")
 		return true
 	end
 	if iter > MAX_ITER
@@ -34,8 +33,8 @@ function stoppingCriteria(iter::Int64,fe::Int64,T::Float64,convIter::Int64)
 		println("Stopping because max function evaluation of ",fe,"  was achieved")
 		return true
 	end
-	if T < 0
-		println("Stopping because temperature reached limit of 1e-7")
+	if T < 1e-21
+		println("Stopping because temperature reached limit of 1e-21")
 		return true
 	end
 	return false
@@ -65,14 +64,23 @@ function updateDiag(a::Matrix{Float64},b::Matrix{Float64},op::Function)
 	end
 end
 
+#Convergence testing
+function meanDiag(a::Matrix{Float64})
+	dim = size(a)[1]
+	retval = 0
+	for i = 1:dim
+		retval += a[i,i]
+	end
+	return retval/dim
+end
+
 #Reach thermal equilibrium
 function thermalEquilibrium(X0::Vector{Float64},Xbest::Vector{Float64},xbest::Float64,D::Matrix{Float64},Dx::Matrix{Float64},
-			    bounds::Array{Tuple{Float64,Float64},1},f::Function,T::Float64,sample::Int64,convIter::Int64)
+			    bounds::Array{Tuple{Float64,Float64},1},f::Function,T::Float64,sample::Int64)
 
 	tol = sample*0.1
 	fit0 = f(X0)
 	len = length(X0)
-	ϵ = 1e-5
 	pass = 0
 	fail = 0
 	for i = 1:sample
@@ -95,7 +103,6 @@ function thermalEquilibrium(X0::Vector{Float64},Xbest::Vector{Float64},xbest::Fl
 		
 		#If we take it, update convIter if necessary, update X0 and fit0
 		if took
-			convIter = abs(fit0 - fit1) < ϵ ? convIter + 1 : 0
 			update(X0,X1)
 			fit0 = fit1
 			if fit0 < xbest
@@ -110,13 +117,13 @@ function thermalEquilibrium(X0::Vector{Float64},Xbest::Vector{Float64},xbest::Fl
 
 	#Check for thermal equilibrium
 	if abs(pass - fail) < tol
-		return (true,convIter)
+		return true
 	else 
 		if pass > fail 
 			updateDiag(D,Dx,/)
 		else 
 			updateDiag(D,Dx,*) end
-		return(false,convIter)
+		return false
 	end
 end
 
@@ -149,22 +156,25 @@ function sa(f::Function,D::Matrix{Float64},Dx::Matrix{Float64},
 	#Values needed for main algorithm
 	iter = 0
 	fe = 0
-	convIter = 0
+	converged = false
 	sample = 100
 	Xbest = deepcopy(X0)
 	xbest = f(Xbest)
 
 	#The main SA algorithm
-	while(!stoppingCriteria(iter,fe,T,convIter))
+	while(!stoppingCriteria(iter,fe,T,converged))
 		println(T)
 
 		#Attempt to achieve thermal equilibrium until reached
-		(verdict,convIter) = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample,convIter)
+		verdict = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample)
 		while(!verdict)
 			fe += sample
-			if convIter > Inf  ||  fe > MAX_FE break end
-			(verdict,convIter) = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample,convIter)
+			if fe > MAX_FE break end
+			verdict = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample)
 		end
+
+		#Check for small changes on thermal equilibrium
+		if meanDiag(D) < 1e-12 converged = true end
 
 		#Thermal equilibrium has been reached, decrease temperature
 		T = Tf(T,Tp)
