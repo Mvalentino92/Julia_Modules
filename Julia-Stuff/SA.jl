@@ -5,7 +5,7 @@ Maybe = Union{Float64,Nothing}
 # Some constants
 const MAX_ITER = 1e4
 const MAX_FE = 1e6
-const MAX_CONV = 50
+const MAX_CONV = 1000
 
 # Simple exponential decay
 # ps[1]: α, exponential decay constant
@@ -22,7 +22,7 @@ function linear(T::Float64,ps::Array{Float64,1}) return T - ps[1] end
 # 3) Temperature reaching 0 or below
 # 4) Not seeing improvement in recent iterations
 function stoppingCriteria(iter::Int64,fe::Int64,T::Float64,convIter::Int64)
-	if convIter > MAX_CONV
+	if convIter > Inf
 		println("Stopping because max convergence count of ",convIter," was achieved")
 		return true
 	end
@@ -34,7 +34,7 @@ function stoppingCriteria(iter::Int64,fe::Int64,T::Float64,convIter::Int64)
 		println("Stopping because max function evaluation of ",fe,"  was achieved")
 		return true
 	end
-	if T < 1e-7
+	if T < 0
 		println("Stopping because temperature reached limit of 1e-7")
 		return true
 	end
@@ -69,7 +69,7 @@ end
 function thermalEquilibrium(X0::Vector{Float64},Xbest::Vector{Float64},xbest::Float64,D::Matrix{Float64},Dx::Matrix{Float64},
 			    bounds::Array{Tuple{Float64,Float64},1},f::Function,T::Float64,sample::Int64,convIter::Int64)
 
-	tol = sample*0.1618
+	tol = sample*0.1
 	fit0 = f(X0)
 	len = length(X0)
 	ϵ = 1e-5
@@ -84,10 +84,13 @@ function thermalEquilibrium(X0::Vector{Float64},Xbest::Vector{Float64},xbest::Fl
 
 		#Mark that we will take this answer if better or coin flip
 		took = false
-		if fit1 < fit0 took = true
+		if fit1 < fit0 
+			took = true
 		else
 			prob = exp(-(fit1 - fit0)/T)
-			if rand() < prob took = true end
+			if rand() < prob 
+				took = true 
+			end
 		end
 		
 		#If we take it, update convIter if necessary, update X0 and fit0
@@ -132,7 +135,7 @@ function sa(f::Function,D::Matrix{Float64},Dx::Matrix{Float64},
 
 	#Fix the values in the Tp to have default values based on the function 
 	#Add more functions here for temperature update as necessary
-	defExp = [0.9876789]
+	defExp = [0.95]
 	defLin = [0.01618]
 
 	if Tf == exponential
@@ -148,17 +151,18 @@ function sa(f::Function,D::Matrix{Float64},Dx::Matrix{Float64},
 	fe = 0
 	convIter = 0
 	sample = 100
-	Xbest = X0
+	Xbest = deepcopy(X0)
 	xbest = f(Xbest)
 
 	#The main SA algorithm
 	while(!stoppingCriteria(iter,fe,T,convIter))
+		println(T)
 
 		#Attempt to achieve thermal equilibrium until reached
 		(verdict,convIter) = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample,convIter)
 		while(!verdict)
 			fe += sample
-			if convIter > MAX_CONV  ||  fe > MAX_FE break end
+			if convIter > Inf  ||  fe > MAX_FE break end
 			(verdict,convIter) = thermalEquilibrium(X0,Xbest,xbest,D,Dx,bounds,f,T,sample,convIter)
 		end
 
