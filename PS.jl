@@ -19,7 +19,6 @@ mutable struct Swarm
 	bestValue::Real
 	cognitive::Real
 	social::Real
-	delta::Real
 	omega::Real
 	constraint::Bool
 	k::Real
@@ -59,7 +58,7 @@ function updateSwarm(f::Function,swarm::Swarm)
 			velocity = 0
 			if swarm.constraint && ϕ >= 4
 				χ = (2*swarm.k)/abs(2 - ϕ - sqrt(ϕ*(ϕ-4)))
-				velocity = χ*(intertia + cognitive + social)
+				velocity = χ*(inertia + cognitive + social)
 
 			#Otherwise, default to inertia weight and velocity clamping
 			else
@@ -91,6 +90,19 @@ function updateSwarm(f::Function,swarm::Swarm)
 	end
 end
 
+function radiusConverge(perform::Bool,swarm::Swarm,D::Float64)
+	if perform
+		#Compute the Euclidian distance for all
+		rmax = -Inf
+		for particle in swarm.particles
+			distance = sqrt(mapreduce((x,y) -> (x-y)*(x-y),+,particle.position,swarm.bestPosition))
+			rmax = distance > rmax ? distance : rmax
+		end
+		return rmax/D < 1e-2
+	end
+	return false
+end
+
 #=**********************Main algorithm, takes the following parameters:*********************=#
 # f: Is the objective function to minimize
 # bounds: The space you want to initially spawn particles. 
@@ -114,6 +126,8 @@ end
 #        < 1 will make it's current velocity have less of an impact on its updated velocity. (Exploitation)
 #        > 1 will make its current velocity have more of an impact on its updated velocity.  (Exploration)
 # 
+# gamma: Exponentially decreases or increases omega. 
+# 
 # constraint: Set to true if you want the velocity update overidden with the constraint method.
 #             NOTE: The constraint method is only eligible to kick in if the following is true
 #                   ϕ >= 4 where
@@ -122,16 +136,18 @@ end
 #                   ϕ2 = c2*r2 "" 	    "" 	           ""
 #
 # k: The constant involved in the constraint coefficient method. Must be ∈ (0,1)
-function pswarm(f::Function,bounds::Vector{T}; size::Int64=21
-		,moving::Bool=false,vclamp::T=(0,0),cognitive::Real=1.49618
-		,social::Real=1.49618,delta::Real=1.0,omega::Real=1.0,
-		constraint::Bool=false,k::Real=0.777) where T <: Tuple{Real,Real}
+function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence::Bool=true,size::Int64=21
+		,plot_it::Bool=false,plot_iter::Int64=100,moving::Bool=false,vclamp::Tuple=(-Inf,Inf),clamping::Bool=false
+		,cognitive::Real=1.49618,social::Real=1.49618,delta::Real=1.0,omega::Real=1.0
+		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777) where T <: Tuple{Real,Real}
 
 	#=**********************INITIALIZE SWARM************************=#                 
 	
-	#Calculate velocity clamping based on average of bounds
-	distance = sqrt(mapreduce(x -> x[2] - x[1], +, bounds)/length(bounds))
-	vclamp = (-randb(0.95,1.05)*distance,randb(0.95,1.05)*distance)
+	#Calculate velocity clamping based on average of bounds if non supplied and desired
+	if clamping && vclamp == (-Inf,Inf)
+		distance = sqrt(mapreduce(x -> x[2] - x[1], +, bounds)/length(bounds))
+		vclamp = (-randb(0.95,1.05)*distance,randb(0.95,1.05)*distance)
+	end
 
 	#Iniatilize global best for swarm and particles
 	dim = length(bounds)
@@ -140,22 +156,22 @@ function pswarm(f::Function,bounds::Vector{T}; size::Int64=21
 	particles = Vector{Particle}(undef,size)
 
 	#For every particle to initialize
-	for p = 1:size
+	for i = 1:size
 
 		#Initialize parameters for current particle
 		position = zeros(Float64,dim)
 		velocity = zeros(Float64,dim)
 	
 		#For every dimension of each particle
-		for d = 1:dim
-			position[d] = randb(bounds[d][1],bounds[d][2])
-			velocity[d] += moving ? (rand() - 0.5)*2.0 : 0.0
+		for j = 1:dim
+			position[j] = randb(bounds[j][1],bounds[j][2])
+			velocity[j] += moving ? (rand() - 0.5)*2.0 : 0.0
 		end
 
 		#Set personal best, and create particle
 		personalBestPosition = deepcopy(position)
 		personalBest = f(position)
-		particles[p] = Particle(position,velocity,personalBestPosition,personalBest)
+		particles[i] = Particle(position,velocity,personalBestPosition,personalBest)
 
 		#Update global best if necessary
 		if personalBest < globalBest
@@ -166,21 +182,37 @@ function pswarm(f::Function,bounds::Vector{T}; size::Int64=21
 	
 	#Create swarm model
 	swarm = Swarm(particles,size,dim,bounds,vclamp,
-		      globalBestPosition,globalBest,cognitive,social,delta,omega,constraint,k)
+		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k)
 
-	#Testing for random number of iterations
-	for i = 1:750
+	#Get the diameter of the swarm using the bounds
+	D = sqrt(mapreduce(x -> (x[1]-x[2])*(x[1]-x[2]),+,bounds))*0.95
 
-		updateSwarm(f,swarm)
+	#Plot if applicable, overrides maxiter and convergence
+	if plot_it
+		@gif for i = 1:plot_iter
+			updateSwarm(f,swarm)
 
-		#Change bounds for velocity clamp
-		swarm.vclamp = map(x -> x*swarm.delta,swarm.vclamp)
+			#Change bounds for velocity clamp
+			swarm.vclamp = map(x -> x*delta,swarm.vclamp)
 
-		#=Plotting every iteation
-		x = map(x -> x.position[1],swarm.particles)
-		y = map(x -> x.position[2],swarm.particles)
-		plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])=#
+			#Change omega
+			swarm.omega *= gamma
+
+			#Plotting every iteation
+			x = map(x -> x.position[1],swarm.particles)
+			y = map(x -> x.position[2],swarm.particles)
+			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
+		end
 	end
 
+	i = plot_it ? plot_iter : 0
+	while(i < maxiter && !radiusConverge(convergence,swarm,D))
+		updateSwarm(f,swarm)
+		swarm.vclamp = map(x -> x*delta,swarm.vclamp)
+		swarm.omega *= gamma
+		i += 1
+	end
+
+	println(i)
 	return (swarm.bestPosition,swarm.bestValue)
 end
