@@ -185,7 +185,7 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k)
 
 	#Get the diameter of the swarm using the bounds
-	D = sqrt(mapreduce(x -> (x[1]-x[2])*(x[1]-x[2]),+,bounds))*0.95
+	D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
 
 	#Plot if applicable, overrides maxiter and convergence
 	if plot_it
@@ -198,9 +198,20 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			#Change omega
 			swarm.omega *= gamma
 
-			#Plotting every iteation
-			x = map(x -> x.position[1],swarm.particles)
-			y = map(x -> x.position[2],swarm.particles)
+			#Plotting every iteation, averaging dimensions
+			x = zeros(Float64,size)
+			xdiv = 0
+			y = zeros(Float64,size)
+			ydiv = 0
+			for j = 1:dim
+				if isodd(j) 
+					x += map(p -> p.position[j],swarm.particles)
+					xdiv += 1
+				else
+					y += map(p -> p.position[j],swarm.particles)
+					ydiv += 1
+				end
+			end
 			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
 		end
 	end
