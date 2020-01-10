@@ -38,7 +38,7 @@ end
 
 #Percent error
 function error(actual::Real,expected::Real)
-	return abs(actual - expected)/expected*100 < rand()
+	return abs(actual - expected)/expected < rand()
 end
 
 function tabusearch(f::Function,X0::Vector{T}; reach::Real=500,delta::Real=0.98789, elite_size::Int64=21,
