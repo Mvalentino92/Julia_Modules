@@ -231,6 +231,8 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 					ydiv += 1
 				end
 			end
+			x /= xdiv
+			y /= ydiv
 			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
 		end
 	end
