@@ -15,13 +15,15 @@ mutable struct Swarm
 	dim::Int64
 	bounds::Vector{Tuple{Real,Real}}
 	vclamp::Tuple{Real,Real}
-	bestPosition::Vector{Float64}
-	bestValue::Real
+	bestPosition::Matrix{Float64}
+	bestValue::Vector{Real}
 	cognitive::Real
 	social::Real
 	omega::Real
 	constraint::Bool
 	k::Real
+	lbest::Bool
+	ni::Int64
 end
 
 # Return a float within min and max
@@ -29,9 +31,60 @@ function randb(min::Real,max::Real)
 	return min + (max - min)*rand()
 end
 
+#Adjusts bounds for updates
+function adjust(x,n)
+	retval = (x + n) % n
+	return retval == 0 ? n : retval
+end
+
 #Master update function
 function updateSwarm(f::Function,swarm::Swarm)
-	#For every particle in the swarm
+
+	#Update memory for every particle in the swarm
+	gbestVal = Inf
+	gbestPosition = zeros(Float64,swarm.dim)
+	for i = 1:swarm.size
+		particle = swarm.particles[i]
+
+		#Update personal best
+		fitness = f(particle.position)
+		if fitness < particle.bestValue
+			particle.bestValue = fitness
+			particle.bestPosition = deepcopy(particle.position)
+		end
+
+		#=************Update global best************=#
+
+		#If lbest, do all neighborhoods seperately
+		if swarm.lbest
+			#Get the best value within the adjusted bounds
+			indices = map(x -> adjust(x,swarm.size),i-swarm.ni:1:i+swarm.ni)
+			ndex = indices[1]
+			nbest = Inf
+			for j in indices
+				if swarm.particles[j].bestValue < nbest
+					ndex = j
+					nbest = swarm.particles[j].bestValue
+				end
+			end
+			swarm.bestValue[i] = nbest
+			swarm.bestPosition[:,i] = deepcopy(swarm.particles[ndex].bestPosition)
+		else
+			if particle.bestValue < gbestVal
+				gbestVal = particle.bestValue
+				gbestPosition = deepcopy(particle.bestPosition)
+			end
+		end
+	end
+	#If not lbest, update all
+	if !swarm.lbest
+		for i = 1:swarm.size
+			swarm.bestValue[i] = gbestVal
+			swarm.bestPosition[:,i] = deepcopy(gbestPosition)
+		end
+	end
+
+	#Update velocity and position for every particle.
 	for i = 1:swarm.size
 		particle = swarm.particles[i]
 
@@ -39,10 +92,9 @@ function updateSwarm(f::Function,swarm::Swarm)
 		for j = 1:swarm.dim
 
 			#=*********Update velocity*******=#
-			
 			#Get distance from personal and global best
 			pbest = particle.bestPosition[j] - particle.position[j]
-			gbest = swarm.bestPosition[j] - particle.position[j]
+			gbest = swarm.bestPosition[j,i] - particle.position[j]
 
 			#Calculate phi for checking constraints and minimizing equation footprint
 			ϕ1 = swarm.cognitive*rand()
@@ -71,31 +123,33 @@ function updateSwarm(f::Function,swarm::Swarm)
 			end
 			particle.velocity[j] = velocity
 
-			#Update position
+			#=**********Update position********=#
 			particle.position[j] = particle.position[j] + particle.velocity[j]
-		end
-
-		#Update personal best
-		fitness = f(particle.position)
-		if fitness < particle.bestValue
-			particle.bestValue = fitness
-			particle.bestPosition = deepcopy(particle.position)
-		end
-
-		#Update global best
-		if particle.bestValue < swarm.bestValue
-			swarm.bestValue = particle.bestValue
-			swarm.bestPosition = deepcopy(particle.bestPosition)
 		end
 	end
 end
 
+#NEED TO CHANGE THIS BECAUSE BEST POSITION IS DIFFERENT NOW
 function radiusConverge(perform::Bool,swarm::Swarm,D::Float64)
 	if perform
+		#Get the bestneighborhood position
+		ndex = 1
+		if swarm.lbest
+			nbest = swarm.bestValue[ndex]
+			for i = 2:swarm.size
+				if swarm.bestValue[i] < nbest
+					nbest = swarm.bestValue[i]
+					ndex = i
+				end
+			end
+		end
+		bestPosition = swarm.bestPosition[:,ndex]
+
 		#Compute the Euclidian distance for all
 		rmax = -Inf
-		for particle in swarm.particles
-			distance = sqrt(mapreduce((x,y) -> (x-y)*(x-y),+,particle.position,swarm.bestPosition))
+		for i = 1:swarm.size
+			particle = swarm.particles[i]
+			distance = sqrt(mapreduce((x,y) -> (x-y)*(x-y),+,particle.position,bestPosition))
 			rmax = distance > rmax ? distance : rmax
 		end
 		return rmax/D < 1e-2
@@ -139,7 +193,8 @@ end
 function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence::Bool=true,size::Int64=21
 		,plot_it::Bool=false,plot_iter::Int64=100,moving::Bool=false,vclamp::Tuple=(-Inf,Inf),clamping::Bool=false
 		,cognitive::Real=1.49618,social::Real=1.49618,delta::Real=1.0,omega::Real=1.0
-		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777,tabu_assist::Bool=false) where T <: Tuple{Real,Real}
+		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777,tabu_assist::Bool=false
+		,lbest::Bool=false,ni::Int64=floor(Int64,size/6 - 0.5)) where T <: Tuple{Real,Real}
 
 	#=**********************INITIALIZE SWARM************************=#                 
 	#Calculate velocity clamping based on average of bounds if non supplied and desired
@@ -150,8 +205,8 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 
 	#Iniatilize global best for swarm and particles
 	dim = length(bounds)
-	globalBestPosition = zeros(Float64,dim)
-	globalBest = Inf
+	globalBestPosition = zeros(Float64,dim,size)
+	globalBest = repeat([Inf],size)
 	particles = Vector{Particle}(undef,size)
 	
 	#Get the diameter of the swarm using the bounds
@@ -189,24 +244,16 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			velocity[j] += moving ? (rand() - 0.5)*2.0 : 0.0
 		end
 
-		#Set personal best, and create particle (If tabu assist is on, overrite this particle!)
+		#Create particle (If tabu assist is on, overrite this particle!)
 		if tabu_assist && sum(tabu_positions[i]) < Inf
 			position = tabu_positions[i]
 		end
-		personalBestPosition = deepcopy(position)
-		personalBest = f(position)
-		particles[i] = Particle(position,velocity,personalBestPosition,personalBest)
-
-		#Update global best if necessary
-		if personalBest < globalBest
-			globalBest = personalBest
-			globalBestPosition = deepcopy(personalBestPosition)
-		end
+		particles[i] = Particle(position,velocity,zeros(Float64,dim),Inf)
 	end
 	
 	#Create swarm model
 	swarm = Swarm(particles,size,dim,bounds,vclamp,
-		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k)
+		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k,lbest,ni)
 
 	#Plot if applicable, overrides maxiter and convergence
 	if plot_it
@@ -235,7 +282,8 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			end
 			x /= xdiv
 			y /= ydiv
-			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
+			#plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
+			plot(x,y,seriestype=:scatter,xlim=(-1000,1000),ylim=(-1000,1000))
 		end
 	end
 
