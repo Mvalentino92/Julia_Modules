@@ -139,10 +139,9 @@ end
 function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence::Bool=true,size::Int64=21
 		,plot_it::Bool=false,plot_iter::Int64=100,moving::Bool=false,vclamp::Tuple=(-Inf,Inf),clamping::Bool=false
 		,cognitive::Real=1.49618,social::Real=1.49618,delta::Real=1.0,omega::Real=1.0
-		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777) where T <: Tuple{Real,Real}
+		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777,tabu_assist::Bool=false) where T <: Tuple{Real,Real}
 
 	#=**********************INITIALIZE SWARM************************=#                 
-	
 	#Calculate velocity clamping based on average of bounds if non supplied and desired
 	if clamping && vclamp == (-Inf,Inf)
 		distance = sqrt(mapreduce(x -> x[2] - x[1], +, bounds)/length(bounds))
@@ -154,6 +153,26 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 	globalBestPosition = zeros(Float64,dim)
 	globalBest = Inf
 	particles = Vector{Particle}(undef,size)
+	
+	#Get the diameter of the swarm using the bounds
+	D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
+
+	#If tabu assisted, generate initial particle using tabu search and recalculate swarm diameter and bounds
+	if tabu_assist
+		X0 = map(x -> (x[2]-x[1])/2 + x[1],bounds)	
+		println(X0)
+		(_,tabu_positions) = tabusearch(f,X0,reach=D/2,elite_size=size)
+		tabu_bounds = Vector{Tuple{Real,Real}}(undef,dim)
+		for i in tabu_positions
+			println(i," ",f(i))
+		end
+		for i = 1:dim
+			curdim = map(x -> x[i],tabu_positions)
+			tabu_bounds[i] = (minimum(curdim)*0.95,maximum(curdim)*1.05)
+		end
+		bounds = tabu_bounds
+		D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
+	end
 
 	#For every particle to initialize
 	for i = 1:size
@@ -168,7 +187,10 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			velocity[j] += moving ? (rand() - 0.5)*2.0 : 0.0
 		end
 
-		#Set personal best, and create particle
+		#Set personal best, and create particle (If tabu assist is on, overrite this particle!)
+		if tabu_assist && sum(tabu_positions[i]) < Inf
+			position = tabu_positions[i]
+		end
 		personalBestPosition = deepcopy(position)
 		personalBest = f(position)
 		particles[i] = Particle(position,velocity,personalBestPosition,personalBest)
@@ -183,9 +205,6 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 	#Create swarm model
 	swarm = Swarm(particles,size,dim,bounds,vclamp,
 		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k)
-
-	#Get the diameter of the swarm using the bounds
-	D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
 
 	#Plot if applicable, overrides maxiter and convergence
 	if plot_it
@@ -216,6 +235,7 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		end
 	end
 
+	#Main algorithm
 	i = plot_it ? plot_iter : 0
 	while(i < maxiter && !radiusConverge(convergence,swarm,D))
 		updateSwarm(f,swarm)
