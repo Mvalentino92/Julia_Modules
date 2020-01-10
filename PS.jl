@@ -170,7 +170,9 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			curdim = map(x -> x[i],tabu_positions)
 			tabu_bounds[i] = (minimum(curdim)*0.95,maximum(curdim)*1.05)
 		end
-		bounds = tabu_bounds
+
+		#Combine to avoid infinity, and recalculate diameter
+		bounds = map((x,y) -> sum(x) == Inf ? y : x,tabu_bounds,bounds)
 		D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
 	end
 
