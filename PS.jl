@@ -216,6 +216,7 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 	if tabu_assist
 		X0 = map(x -> (x[2]-x[1])/2 + x[1],bounds)	
 		println(X0)
+		println(D)
 		(_,tabu_positions) = tabusearch(f,X0,reach=D/2,elite_size=size)
 		tabu_bounds = Vector{Tuple{Real,Real}}(undef,dim)
 		for i in tabu_positions
@@ -223,11 +224,13 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		end
 		for i = 1:dim
 			curdim = map(x -> x[i],tabu_positions)
-			tabu_bounds[i] = (minimum(curdim)*0.95,maximum(curdim)*1.05)
+			mn = minimum(curdim) 
+			mx = maximum(curdim)
+			mn = mn == Inf ? bounds[i][1] : mn
+			mx = mx == Inf ? bounds[i][2] : mx
+			tabu_bounds[i] = (mn,mx)
 		end
-
-		#Combine to avoid infinity, and recalculate diameter
-		bounds = map((x,y) -> sum(x) == Inf ? y : x,tabu_bounds,bounds)
+		bounds = tabu_bounds
 		D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
 	end
 
@@ -282,8 +285,7 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			end
 			x /= xdiv
 			y /= ydiv
-			#plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
-			plot(x,y,seriestype=:scatter,xlim=(-1000,1000),ylim=(-1000,1000))
+			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
 		end
 	end
 
