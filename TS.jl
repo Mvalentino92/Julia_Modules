@@ -10,13 +10,25 @@ function randb(min::Real,max::Real)
 end
 
 #Generate neighborhood
-function generateneighborhood(f::Function,X0::Vector{T},reach::Real,size::Int64) where T <: Real
+function generateneighborhood(f::Function,X0::Vector{T},reach::Real
+			      ,size::Int64,hardbounds::Vector{G}) where T <: Real where G <: Tuple{Real,Real}
 
 	dim = length(X0)
 	neighborhood = Vector{Solution}(undef,size)
 
 	#Get bounds for each dimension and begin to generate
-	bounds = map(x -> (x-reach,x+reach),X0)
+	bounds = Vector{Tuple}(undef,dim)
+	for j = 1:dim 
+		mn = X0[j]-reach
+		mx = X0[j]+reach
+
+		mn  = mn < hardbounds[j][1] ? hardbounds[j][1] : mn
+		mx  = mx > hardbounds[j][2] ? hardbounds[j][2] : mx
+
+		bounds[j] = (mn,mx)
+	end
+
+	#Populate neighborhood
 	for i = 1:size
 		vec = zeros(Float64,dim)
 		for j = 1:dim
@@ -36,13 +48,15 @@ function istabu(x0::Vector{Float64},tabulist::Vector{Solution},tol::Real)
 	return false
 end
 
-#Percent error
+#Percent error (abs really isnt needed, keep it for utility though)
 function error(actual::Real,expected::Real)
 	return abs(actual - expected)/expected < rand()
 end
 
 function tabusearch(f::Function,X0::Vector{T}; reach::Real=500,delta::Real=0.98789, elite_size::Int64=21,
-		    max_iter::Int64=1000, tabu_size::Int64=div(max_iter,7),neighborhood_size::Int64=1000) where T <: Real
+		    max_iter::Int64=1000, tabu_size::Int64=div(max_iter,7)
+		    ,hardbounds::Vector{G}=repeat([(-Inf,Inf)],length(X0))
+		    ,neighborhood_size::Int64=1000) where T <: Real where G <: Tuple{Real,Real}
 	#Init initial and best solution etc
 	dim = length(X0)
 	X0 = Solution(X0,f(X0))
@@ -65,7 +79,7 @@ function tabusearch(f::Function,X0::Vector{T}; reach::Real=500,delta::Real=0.987
 	iter = 0
 	while !markedtabu && iter < max_iter #While all not tabu or iterations left
 		#Generate the neighborhood
-		neighborhood = generateneighborhood(f,X0.vec,reach,neighborhood_size)
+		neighborhood = generateneighborhood(f,X0.vec,reach,neighborhood_size,hardbounds)
 
 		#Sort it by value
 		sort!(neighborhood,by=(x -> x.fitness))

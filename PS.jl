@@ -14,6 +14,7 @@ mutable struct Swarm
 	size::Int64
 	dim::Int64
 	bounds::Vector{Tuple{Real,Real}}
+	hardbounds::Vector{Tuple{Real,Real}}
 	vclamp::Tuple{Real,Real}
 	bestPosition::Matrix{Float64}
 	bestValue::Vector{Real}
@@ -124,7 +125,13 @@ function updateSwarm(f::Function,swarm::Swarm)
 			particle.velocity[j] = velocity
 
 			#=**********Update position********=#
-			particle.position[j] = particle.position[j] + particle.velocity[j]
+			position = particle.position[j] + particle.velocity[j]
+			if position < swarm.hardbounds[j][1]
+				position = swarm.hardbounds[j][1]
+			elseif position > swarm.hardbounds[j][2]
+				position = swarm.hardbounds[j][2]
+			end
+			particle.position[j] = position
 		end
 	end
 end
@@ -190,19 +197,15 @@ end
 #                   ϕ2 = c2*r2 "" 	    "" 	           ""
 #
 # k: The constant involved in the constraint coefficient method. Must be ∈ (0,1)
-function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence::Bool=true,size::Int64=21
+function pswarm(f::Function,bounds::Vector{T} ; maxiter::Int64=50000,convergence::Bool=true,size::Int64=21
 		,plot_it::Bool=false,plot_iter::Int64=100,moving::Bool=false,vclamp::Tuple=(-Inf,Inf),clamping::Bool=false
 		,cognitive::Real=1.49618,social::Real=1.49618,delta::Real=1.0,omega::Real=1.0
 		,gamma::Real=1.0,constraint::Bool=false,k::Real=0.777,tabu_assist::Bool=false
-		,lbest::Bool=false,ni::Int64=floor(Int64,size/6 - 0.5)) where T <: Tuple{Real,Real}
+		,hardbounds::Vector{G}=repeat([(-Inf,Inf)],length(bounds))
+		,ni::Int64=floor(Int64,size/6 - 0.5) 
+		,lbest::Bool=false) where T <: Tuple{Real,Real} where G <: Tuple{Real,Real}
 
 	#=**********************INITIALIZE SWARM************************=#                 
-	#Calculate velocity clamping based on average of bounds if non supplied and desired
-	if clamping && vclamp == (-Inf,Inf)
-		distance = sqrt(mapreduce(x -> x[2] - x[1], +, bounds)/length(bounds))
-		vclamp = (-randb(0.95,1.05)*distance,randb(0.95,1.05)*distance)
-	end
-
 	#Iniatilize global best for swarm and particles
 	dim = length(bounds)
 	globalBestPosition = zeros(Float64,dim,size)
@@ -217,10 +220,10 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		X0 = map(x -> (x[2]-x[1])/2 + x[1],bounds)	
 		println(X0)
 		println(D)
-		(_,tabu_positions) = tabusearch(f,X0,reach=D/2,elite_size=size)
+		(_,tabu_positions) = tabusearch(f,X0,reach=D/2,elite_size=size,hardbounds=hardbounds)
 		tabu_bounds = Vector{Tuple{Real,Real}}(undef,dim)
 		for i in tabu_positions
-			println(i," ",f(i))
+			println(i)
 		end
 		for i = 1:dim
 			curdim = map(x -> x[i],tabu_positions)
@@ -232,6 +235,12 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		end
 		bounds = tabu_bounds
 		D = mapreduce(x -> x[2]-x[1],+,bounds)/dim
+	end
+	
+	#Calculate velocity clamping based on average of bounds if non supplied and desired
+	if clamping && vclamp == (-Inf,Inf)
+		distance = sqrt(mapreduce(x -> x[2] - x[1], +, bounds)/length(bounds))
+		vclamp = (-randb(0.95,1.05)*distance,randb(0.95,1.05)*distance)
 	end
 
 	#For every particle to initialize
@@ -255,7 +264,7 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 	end
 	
 	#Create swarm model
-	swarm = Swarm(particles,size,dim,bounds,vclamp,
+	swarm = Swarm(particles,size,dim,bounds,hardbounds,vclamp,
 		      globalBestPosition,globalBest,cognitive,social,omega,constraint,k,lbest,ni)
 
 	#Plot if applicable, overrides maxiter and convergence
@@ -285,6 +294,14 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 			end
 			x /= xdiv
 			y /= ydiv
+			println("Printing x:")
+			for i in x
+				println(i)
+			end
+			println("Printing y:")
+			for i in y
+				println(i)
+			end
 			plot(x,y,seriestype=:scatter,xlim=swarm.bounds[1],ylim=swarm.bounds[2])
 		end
 	end
@@ -297,7 +314,6 @@ function pswarm(f::Function,bounds::Vector{T}; maxiter::Int64=50000,convergence:
 		swarm.omega *= gamma
 		i += 1
 	end
-
-	println(i)
-	return (swarm.bestPosition,swarm.bestValue)
+	if swarm.lbest return (swarm.bestPosition,swarm.bestValue) end
+	return (swarm.bestPosition[:,1],swarm.bestValue[1])
 end
