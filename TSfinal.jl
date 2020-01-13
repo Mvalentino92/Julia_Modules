@@ -60,7 +60,7 @@ function tabusearch(f::Function,X0::Vector{T}, params::Vector=[]; reach::Real=50
 	#Init initial and best solution etc
 	dim = length(X0)
 	X0 = Solution(X0,f(X0,params))
-	Xbest = X0
+	Xbest = Solution([0.0],Inf)
 	tabu_index = 1
 	elite_index = 1
 	tol = sqrt(reach)
