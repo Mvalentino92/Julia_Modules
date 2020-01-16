@@ -103,7 +103,7 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 	#Track number of function evaluations, and sin value
 	fe = 1
 	k = 0
-	x = (0.9 - initial)/sincoeff - 1
+	x = ((0.5 + sincoeff) - initial)/sincoeff - 1
 
 	#While stopping critera not met (temp, function calls, and convergence)
 	while temperature > 0 && fe < maxfe && !converged(samodel.D,convergencetol)
