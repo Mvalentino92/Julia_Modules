@@ -81,7 +81,7 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 	X = Solution(X0,f(X0,params))
 
 	#Initiate matrix D for step size, use hardbounds if no step size provided
-	sizeemmpty = isempty(stepsize)
+	sizeempty = isempty(stepsize)
 	limitempty = isempty(steplimit)
 	D = zeros(dim,dim)
 	Dlimit = zeros(dim)
