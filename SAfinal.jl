@@ -70,7 +70,7 @@ end
 #sinusoidal overrides eqlibratio
 function simanneal(f::Function,X0::Vector,params::Vector=[]
 		   ; hardbounds::Vector=repeat([(-Inf,Inf)],length(X0))
-		   , stepsize::Vector=[], stepdecay::Real=0.98789, steplimit::Vector=stepsize
+		   , stepsize::Vector=[], stepdecay::Real=0.98789, steplimit::Vector=[]
 		   , temperature::Real=1.0, islinear::Bool=false, tempdecay::Real=(islinear ? 1e-3 : 0.98789)
 		   , convergencetol::Real=1e-7, maxfe::Int=5000000
 		   , eqlibratio::Tuple=(1,1), eqlibtol::Real=0.1,eqlibtrials::Int=100
@@ -81,13 +81,14 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 	X = Solution(X0,f(X0,params))
 
 	#Initiate matrix D for step size, use hardbounds if no step size provided
-	wasempty = isempty(stepsize)
+	sizeemmpty = isempty(stepsize)
+	limitempty = isempty(steplimit)
 	D = zeros(dim,dim)
 	Dlimit = zeros(dim)
 	for i = 1:dim
-		step = wasempty ? (hardbounds[i][2] - hardbounds[i][1])/2 : stepsize[i]
+		step = sizeempty ? (hardbounds[i][2] - hardbounds[i][1])/2 : stepsize[i]
 		D[i,i] = step == Inf ? 365*rand() : step
-		Dlimit[i] = wasempty ? step : steplimit[i]
+		Dlimit[i] = limitempty ? D[i,i] : steplimit[i]
 	end
 
 	#Parameters for thermal equilibrium
