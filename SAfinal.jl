@@ -74,7 +74,7 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 		   , temperature::Real=1.0, islinear::Bool=false, tempdecay::Real=(islinear ? 1e-3 : 0.98789)
 		   , convergencetol::Real=1e-7, maxfe::Int=5000000
 		   , eqlibratio::Tuple=(1,1), eqlibtol::Real=0.1,eqlibtrials::Int=100
-		   , sinusoidal::Bool=false, sincoeff::Real=0.4, sindecay::Real=0.98, sinupdate::Real=pi/21)
+		   , sinusoidal::Bool=false, sincoeff::Real=pi/10, sindecay::Real=0.98, sinupdate::Real=pi/21)
 
 	#=***Initialize simmulated annealing model***=#
 	dim = length(X0)
@@ -103,6 +103,7 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 	#Track number of function evaluations, and sin value
 	fe = 1
 	k = 0
+	sincoeff = sincoeff > 4 || sincoeff < 0 ? pi/10 : sincoeff
 	x = ((0.5 + sincoeff) - initial)/sincoeff - 1
 
 	#While stopping critera not met (temp, function calls, and convergence)
