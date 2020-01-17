@@ -1,8 +1,8 @@
-#Possibly generic for all problems. 
-struct Solution{T <: Real}
-	vec::Vector{T}
-	fitness::Real
-end
+#=Possibly generic for all problems. 
+struct Solution
+	vec::Vector
+	val::Real
+end=#
 
 #Generate random number in range (Possibly generic for all problems
 function randb(min::Real,max::Real)
@@ -82,7 +82,7 @@ function tabusearch(f::Function,X0::Vector{T}, params::Vector=[]; reach::Real=50
 		neighborhood = generateneighborhood(f,X0.vec,reach,neighborhood_size,hardbounds,params)
 
 		#Sort it by value
-		sort!(neighborhood,by=(x -> x.fitness))
+		sort!(neighborhood,by=(x -> x.val))
 
 		#Check for tabu
 		for neighbor in neighborhood
@@ -92,10 +92,10 @@ function tabusearch(f::Function,X0::Vector{T}, params::Vector=[]; reach::Real=50
 			if !markedtabu 
 				#Update values
 				X0 = neighbor
-				Xbest = X0.fitness < Xbest.fitness ? X0 : Xbest
+				Xbest = X0.val < Xbest.val ? X0 : Xbest
 
 				#Update elite
-				if acceptelite(X0.fitness,Xbest.fitness)
+				if acceptelite(X0.val,Xbest.val)
 					elitelist[elite_index] = X0
 					elite_index = elite_index + 1 > elite_size ? 1 : elite_index + 1
 				end
