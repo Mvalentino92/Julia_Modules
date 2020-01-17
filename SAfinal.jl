@@ -33,6 +33,7 @@ function thermalequilibrium(f::Function,samodel::SAmodel,T::Real)
 		#Create new solution
 		R = map(x -> (x - 0.5)*2,rand(dim))
 		X1 = samodel.X.vec + samodel.D*R
+
 		#Adjust for hardbounds
 		for i = 1:dim
 			X1[i] = X1[i] < samodel.hardbounds[i][1] ? samodel.hardbounds[i][1] : X1[i]
@@ -66,8 +67,33 @@ function thermalequilibrium(f::Function,samodel::SAmodel,T::Real)
 	return false
 end
 	
-#eqlibtol ∈ (0,1)
-#sinusoidal overrides eqlibratio
+#The main algorithm
+#                MANDATORY 
+# f: The objective function. Must take 2 vector paramters, x::Vector and params::Vector
+# X0: The initial guess vector
+#                OPTIONAL
+# params: To be passed to objective function f, default is empty
+#                KEY WORD ARGS
+# hardbounds: Bounds restricting the algorithm from searching beyond this domain 
+# stepsize: Initial stepsize, will default to values influenced from bounds, or random
+# stepdecay: The constant for decreasing or increasing stepsize based on result of thermal equilibrium attempts
+# steplimit: An upper bound limit for the stepsize. Prevents algorithm from diverging.
+# 	     Default if not specified is the stepsize
+# temperature: The temperature, default is 1. Higher values allow for worse solutions.
+# islinear: Will use linear decay instead of exponential for the temperature
+# tempdecay: Defaults for both exponential and linear
+# convergencetol: How small the step size needs to be after thermal equilibrium to stop the algorithm
+# maxfe: The maximum amount of function evaluations before terminating algorithm
+# eqlibratio: The ratio for accepting and rejecting solutions. In the format (accept,reject)
+# eqlibtol: The tolerance for thermal equilibrium. ∈ (0,1). Its relative to ratios.
+#           0.1 tolerance with accept value of 0.4 (after calculation) will be 0.44 (0.4 + 0.4*0.1)
+# eqlibtrails: How many trials for each iteration of attempting thermal equilibrium
+# sinusoidal: Changes the equilibrium ratios in a sinusoidal fashion. Will alternate between high accept,
+#             low reject, and low accept, high reject in a sine wave. Affected and converges towards the default
+#             eqlibration given over time, through an exponential decay of the amplitude of the sine wave.
+# sincoeff: The coefficient dictating the initial amplitude of the sine wave. Must ∈ [0,0.4]
+# sindecay: The exponential decay of the sincoeff. As it approaches 0, the initial eqlibratio is achieved.
+# sinupdate: The value to add to k, in sin(k) =#
 function simanneal(f::Function,X0::Vector,params::Vector=[]
 		   ; hardbounds::Vector=repeat([(-Inf,Inf)],length(X0))
 		   , stepsize::Vector=[], stepdecay::Real=0.98789, steplimit::Vector=[]
@@ -124,13 +150,12 @@ function simanneal(f::Function,X0::Vector,params::Vector=[]
 			k += sinupdate
 		end
 		
-		#Increase function calls
+		#Increase function calls once more to account for while loop terminating
 		fe += samodel.trials
 
 		#Once at thermal equilibrium, decrease temperature
 		temperature = islinear ? temperature - tempdecay : temperature*tempdecay
 	end
-	println(temperature," ",fe," ",sum(samodel.D)/size(samodel.D)[1]," ",sincoeff)
 
 	return (samodel.X.vec,samodel.X.val)
 end
