@@ -35,9 +35,9 @@ function thermalequilibrium(f::Function,samodel::SAmodel,T::Real)
 		X1 = samodel.X.vec + samodel.D*R
 
 		#Adjust for hardbounds
-		for i = 1:dim
-			X1[i] = X1[i] < samodel.hardbounds[i][1] ? samodel.hardbounds[i][1] : X1[i]
-			X1[i] = X1[i] > samodel.hardbounds[i][2] ? samodel.hardbounds[i][2] : X1[i]
+		for j = 1:dim
+			X1[j] = X1[j] < samodel.hardbounds[j][1] ? samodel.hardbounds[j][1] : X1[j]
+			X1[j] = X1[j] > samodel.hardbounds[j][2] ? samodel.hardbounds[j][2] : X1[j]
 		end
 		X1val = f(X1,samodel.params)
 
