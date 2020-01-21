@@ -16,7 +16,7 @@ mutable struct Swarm
 	dim::Int64
 	bounds::Vector{Tuple{Real,Real}}
 	hardbounds::Vector{Tuple{Real,Real}}
-	velocitybounds::Vector{Tuple{Real,Real}}
+	velocitybounds::Vector{Real}
 	bestPosition::Matrix{Float64}
 	bestValue::Vector{Real}
 	c₁::Real #cognitive
@@ -123,10 +123,10 @@ function updateSwarm(f::Function,swarm::Swarm,params::Vector)
 			#Otherwise, default to inertia weight and velocity clamping
 			else
 				velocity = swarm.ω*inertia + cognitive + social
-				if velocity < swarm.velocitybounds[j][1]
-					velocity = swarm.velocitybounds[j][1]
-				elseif velocity > swarm.velocitybounds[j][2]
-					velocity = swarm.velocitybounds[j][2]
+				if velocity > swarm.velocitybounds[j]
+					velocity = swarm.velocitybounds[j]
+				elseif -velocity > swarm.velocitybounds[j]
+					velocity = -swarm.velocitybounds[j]
 				end
 			end
 			particle.velocity[j] = velocity
@@ -190,7 +190,7 @@ end
 # plotit: Plots a certain number of iterations of the particles on a 2D plot, and returns it as a gif.
 # plotiter: The number of of iterations to plot for the gif
 # clamping: If velocity clamping is desired.
-# velocitybounds: A lower and upper bound applied to EVERY dimension for the particles velocity.
+# velocitybounds: Upper velocity bounds for every dimension
 # velocitydecay: The expoenent in an equation  that lowers the values of velocity bounds every iteration exponentially
 #                < 1 for faster decay, > 1 for slower decay.
 # decayvelocity: True if you want to decay velocity bounds exponentially
@@ -256,11 +256,14 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 		end
 	end
 	
-	#Calculate velocity clamping based on bounds given
+	#If clamping is false, no bounds
+	if !clamping
+		velocitybounds = repeat([Inf],dim)
+	end
+	
+	#If clamping is true, and didnt specificy, compute
 	if clamping && isempty(velocitybounds)
-		velocitybounds = map(x -> (-(x[2] - x[1])*0.95,(x[2]-x[1])*0.95),bounds)
-	elseif !clamping
-		velocitybounds = repeat([(-Inf,Inf)],dim)
+		velocitybounds = map(x -> sqrt((x[2]-x[1])),bounds)
 	end
 
 	#For every particle to initialize
@@ -306,7 +309,7 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 			updateSwarm(f,swarm,params)
 
 			#Change bounds for velocity clamp if applicable
-			swarm.velocitybounds = decayvelocity ? map(x -> x*(1 - (i/maxiter)^swarm.δ),velocitybounds) : swarm.velocitybounds
+			swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
 
 			#Change inertiaweight if applicable
 			swarm.ω = decayinertia ? inertiaweight*(1 - i/maxiter)^swarm.γ : swarm.ω
@@ -335,7 +338,7 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 	i = plotit ? plotiter : 0
 	while(i < maxiter && !radiusConverge(convergence,swarm,D,convergencetol))
 		updateSwarm(f,swarm,params)
-		swarm.velocitybounds = decayvelocity ? map(x -> x*(1 - (i/maxiter)^swarm.δ),velocitybounds) : swarm.velocitybounds
+		swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
 		swarm.ω = decayinertia ? inertiaweight*(1 - i/maxiter)^swarm.γ : swarm.ω
 		i += 1
 	end
