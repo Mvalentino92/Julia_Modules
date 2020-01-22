@@ -1,10 +1,13 @@
-struct Solution 
+#=struct Solution 
 	vec::Vector
 	val::Real
-end
+end=#
+
+count = 0
 
 mutable struct Tournament
 	fighters::Vector{Solution}
+	params::Vector
 	hardbounds::Vector
 	reach::Real
 	rounds::Int
@@ -52,7 +55,8 @@ function fight(f::Function,tourny::Tournament,dex1::Int,dex2::Int)
 		else
 			p1prime = permutate(p1.vec,tourny.reach,tourny.hardbounds)
 			p2prime = permutate(p2.vec,tourny.reach,tourny.hardbounds)
-			p1wins += f(p1prime,[]) < f(p2prime,[]) ? 1 : 0
+			p1wins += f(p1prime,tourny.params) < f(p2prime,tourny.params) ? 1 : 0
+			global count += 2
 		end
 	end
 
@@ -88,27 +92,23 @@ function gentournament(f::Function,tourny::Tournament,winner::Solution)
 	dim = length(winner.vec)
 	for i = 1:length(tourny.fighters)
 		vec = permutate(winner.vec,tourny.reach,tourny.hardbounds)
-		tourny.fighters[i] = Solution(vec,f(vec,[]))
+		tourny.fighters[i] = Solution(vec,f(vec,tourny.params))
+		global count += 1
 	end
 end
 
-function touramentsearch(f::Function,X0::Vector
+function touramentsearch(f::Function,X0::Vector, params::Vector=[]
 			 ; reach::Real=100, matches::Int=50, rounds::Int=8
 			 , hardbounds::Vector=repeat([(-Inf,Inf)],length(X0)))
 		 			
 	#Initialize the tournament struct
-	winner = Solution(X0,f(X0,[]))
+	winner = Solution(X0,f(X0,params))
 	fighters = Vector{Solution}(undef,trunc(Int64,2^rounds))
-	tourny = Tournament(fighters,hardbounds,reach,rounds,matches)
+	tourny = Tournament(fighters,params,hardbounds,reach,rounds,matches)
 	gentournament(f,tourny,winner)
 
 	#While the reach area is still large enough
-	x = Vector{Float64}()
-	y = Vector{Float64}()
 	while tourny.reach > 1e-5
-		#For graphing
-		push!(x,(winner.vec[1]+winner.vec[2])/2)
-		push!(y,(winner.vec[3]+winner.vec[4])/2)
 
 		# Begin tournament	
 		winner = commence(f,tourny)
@@ -120,10 +120,8 @@ function touramentsearch(f::Function,X0::Vector
 		tourny.reach *= 0.98789
 	end
 
-	@gif for i = 1:length(x)
-		plot([x[i]],[y[i]],seriestype=:scatter,xlim=hardbounds[1],ylim=hardbounds[1])
-	end
-
 	#Return the winner of the tournament
+	println(count)
+	global count = 0
 	return winner
 end
