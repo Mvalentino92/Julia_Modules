@@ -20,7 +20,10 @@ function randomsearch(f::Function,bounds::Vector,maxiter::Int,params::Vector=[])
 			for i = 1:(maxiter-iter)*0.01
 				vec = similar(mnvec)
 				for j = 1:dim
-					vec[j] = randb(exploitvec[j]-1,exploitvec[j]+1)
+					reach = (bounds[j][2] - bounds[j][1])*0.05
+					lb = exploitvec[j] - reach < bounds[j][1] ? bounds[j][1] : exploitvec[j] - reach
+					rb = exploitvec[j] + reach > bounds[j][2] ? bounds[j][2] : exploitvec[j] + reach
+					vec[j] = randb(lb,rb)
 				end
 				val = f(vec,params)
 				if val < mnval 
