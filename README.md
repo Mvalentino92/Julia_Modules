@@ -1,3 +1,9 @@
+## Optimization and Metaheuristics
+*Some of the classic metaheuristics for real valued functions, and personal attempts at implementating such algorithms. 
+
+**Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
+<br> Velocity Clampming, Inertia Weight (Decay potential for both), Constraint Coefficident, Swarm Convergence Testing, and lbest variant using a ring topology.
+
 ## Algorithms Book 
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 <br>Writing out some of the algorithms myself as I go along for practice. Might throw some random Julia files in here too, that arent insprired or from the book, hence the name "Julia_Stuff"
