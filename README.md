@@ -2,7 +2,9 @@
 *Some of the classic metaheuristics for real valued functions, and personal attempts at implementating such algorithms. 
 
 **Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
-<br> Velocity Clampming, Inertia Weight (Decay potential for both), Constraint Coefficident, Swarm Convergence Testing, and lbest variant using a ring topology.
+<br> Velocity Clampming, Inertia Weight (decay potential for both), Constraint Coefficient, Swarm Convergence Testing, and lbest variant using a ring topology.
+
+**Random Search:** Randomly searches through the solution space, and exploits the immediate area if in a good location (exploitation)
 
 ## Algorithms Book 
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
