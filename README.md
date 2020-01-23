@@ -4,7 +4,13 @@
 **Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
 <br> Velocity Clampming, Inertia Weight (decay potential for both), Constraint Coefficient, Swarm Convergence Testing, and lbest variant using a ring topology.
 
-**Random Search:** Randomly searches through the solution space, and exploits the immediate area if in a good location (exploitation)
+**Random Search:** Randomly searches through the solution space, and exploits the immediate area if in a good location (exploitation). Not intended to be an efficient function, but used to measure the effectiveness of any of the other algorithms. Basically I want to know, "Does this algorithm consistently perform significantly better than a "guided/exploitative" random search?".
+
+**Simulated Annealing:** Standard simulated annealing algorithm. Has a personal spin of optionally having the thermal equilibrium ratio follow a sine wave. This accomplishes a fluctuating tradeoff between exploration and exploitation which then conveged to the initially specified ratio. Experimental, just because.
+
+**Tabu Search:** Operates mainly as an auxillary function for *Particle Swarm*. Attempts to find a tighter more promising subspace of the solution space for *Particle Swarm* to spawn the intitial particle locations. Enforces exploration and exploitation by marking solutions as tabu, and tightening the area of solutions that are tabu over time. Basic memory structure of recency used, and hall of fame members are returned as the solutions for use in *Particle Swarm*
+
+**Tournament Search:** A custom algorithm I created. Works under the concept of tournaments being held between a pool of solutions, where a winner is selected by sampling the space around each "fighter" and comparing the fitness at these new location. Whichever fighter wins the most matches, wins the fight persists to the next round of the tournament. The single winner is used to populate the next pool of fighters for the tournament. As iterations progress, the sampled space around each fighter during matches is reduced, as is the space where the winner populates the next tournament. Additionally, to foster exploitation as the algorithm runs, matches have a higher chance to be won based on the actual fitness of the current fighter, and not a solution in its sample space. 
 
 ## Algorithms Book 
 Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
