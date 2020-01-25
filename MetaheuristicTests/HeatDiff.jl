@@ -151,7 +151,7 @@ function heatdiff(f::Function,bounds::Vector,params::Vector=[]
 	iter = 0	
 	while iter < maxiter
 		updaterod(f,rod)
-		rod.ω = influence*(1 - iter/maxiter)^influencedecay
+		rod.ω = influence*(1 - (iter/maxiter)^influencedecay)
 		stabilized(f,rod,stabilizetol,iter)
 		iter += 1
 	end
