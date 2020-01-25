@@ -35,7 +35,6 @@ function stabilized(f::Function,rod::Rod,tol::Real,iter::Int)
 
 	# Add 10 percent random solutions into rod
 	if diff < tol
-		println("HAPPENED")
 		replace = sample(2:rod.size+1,trunc(Int64,rod.size*0.1),replace=false)
 		for i in replace
 			rvec = similar(flankpoint.vec)
