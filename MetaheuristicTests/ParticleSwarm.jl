@@ -191,12 +191,14 @@ end
 # plotiter: The number of of iterations to plot for the gif
 # clamping: If velocity clamping is desired.
 # velocitybounds: Upper velocity bounds for every dimension
-# velocitydecay: The expoenent in an equation  that lowers the values of velocity bounds every iteration exponentially
-#                < 1 for faster decay, > 1 for slower decay.
+# velocitydecay: The positive expoenent in an equation that lowers the values of velocity bounds every iteration exponentially
+#                < 1 for faster initial decay and slower ending decay, > 1 vice versa
+# decayvelocity: True if you want to decay velocity bounds exponentially
+# decayinertia: True if you want to decay inertia exponentially
 # cognitive: The cognitive componenet for the velocity update. 
 # inertiaweight: The constant that affects the cognitives components influence.
-# inertiadecay: The exponent in an equation that lowers of the value of inertiaweight exponentially every iteation.
-#                < 1 for faster decay, > 1 for slower decay.
+# inertiadecay: The positive exponent in an equation that lowers of the value of inertiaweight exponentially every iteation.
+#                < 1 for faster initial decay and slower ending decay, > 1 vice versa
 # social: The social component of the velocity update
 # constraint: If the constraint coefficient method is desired
 #             This can be used in tandem with velocity clamping and inertia weight to help control the 
@@ -222,8 +224,9 @@ end
 #             WARNING: Will increase the running time of the algorithm. =#
 function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 		; maxiter::Int64=50000, plotit::Bool=false, plotiter::Int64=100
-		, clamping::Bool=false, velocitybounds::Vector=[],velocitydecay::Real=0
-		, cognitive::Real=1.49618, inertiaweight::Real=1.0, inertiadecay::Real=0
+		, clamping::Bool=false, velocitybounds::Vector=[],velocitydecay::Real=1.0
+		, decayvelocity::Bool=false, decayinertia::Bool=false
+		, cognitive::Real=1.49618, inertiaweight::Real=1.0, inertiadecay::Real=1.0
 		, social::Real=1.49618, constraint::Bool=false,k::Real=0.777
 		, size::Int64=21, moving::Bool=false, hardbounds::Vector{G}=repeat([(-Inf,Inf)],length(bounds))
 		, lbest::Bool=false, nsize::Int64=floor(Int64,size/6 - 0.5)
@@ -306,10 +309,10 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 			updateSwarm(f,swarm,params)
 
 			#Change bounds for velocity clamp if applicable
-			swarm.velocitybounds = velocitybounds*(1 - (i/maxiter)^swarm.δ)
+			swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
 
 			#Change inertiaweight if applicable
-			swarm.ω = inertiaweight*(1 - (i/maxiter)^swarm.γ)
+			swarm.ω = decayinertia ? inertiaweight*(1 - (i/maxiter)^swarm.γ) : swarm.ω
 
 			#Plotting every iteation, averaging dimensions
 			x = zeros(Float64,size)
@@ -335,8 +338,8 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 	i = plotit ? plotiter : 0
 	while(i < maxiter && !radiusConverge(convergence,swarm,D,convergencetol))
 		updateSwarm(f,swarm,params)
-		swarm.velocitybounds = velocitybounds*(1 - (i/maxiter)^swarm.δ)
-		swarm.ω = inertiaweight*(1 - (i/maxiter)^swarm.γ)
+		swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
+		swarm.ω = decayinertia ? inertiaweight*(1 - (i/maxiter)^swarm.γ) : swarm.ω
 		i += 1
 	end
 

@@ -31,14 +31,15 @@ function stabilized(f::Function,rod::Rod,tol::Real,iter::Int)
 			diff += abs(flankpoint.vec[j] - rod.points[i].vec[j])
 		end
 	end
-	diff /=length(rod.points)
+	diff /= length(rod.points)
 
 	# Add 10 percent random solutions into rod
 	if diff < tol
+		println("HAPPENED")
 		replace = sample(2:rod.size+1,trunc(Int64,rod.size*0.1),replace=false)
 		for i in replace
 			rvec = similar(flankpoint.vec)
-			for j = 1:dim
+			for j = 1:rod.dim
 				rvec[j]= randb(bounds[j][1],bounds[j][2])
 			end
 			rval = f(rvec,rod.params)
@@ -117,7 +118,7 @@ end
 # The main algorithm
 function heatdiff(f::Function,bounds::Vector,params::Vector=[]
 		  ; size::Int=100, influence::Real=1, maxiter::Int=10000
-		  , stabilizetol::Real=1e-2,influencedecay::Real=0)
+		  , stabilizetol::Real=1,decayinfluence::Bool=false,influencedecay::Real=1)
 
 	dim = length(bounds)
 	points = Vector{Point}(undef,size+2)
@@ -147,11 +148,11 @@ function heatdiff(f::Function,bounds::Vector,params::Vector=[]
 	# Initialize rod
 	rod = Rod(points,params,bounds,size,dim,influence)
 
-	# Begin main algorithm`
+	# Begin main algorithm
 	iter = 0	
 	while iter < maxiter
 		updaterod(f,rod)
-		rod.ω = influence*(1 - (iter/maxiter)^influencedecay)
+		rod.ω = decayinfluence ? influence*(1 - (iter/maxiter)^influencedecay) : rod.ω
 		stabilized(f,rod,stabilizetol,iter)
 		iter += 1
 	end
