@@ -23,7 +23,7 @@ function randb(a::Real,b::Real)
 end
 
 # Checking for convergence
-function stabalized(rod::Rod,tol::Real,iter::Int)
+function stabilized(f::Function,rod::Rod,tol::Real,iter::Int)
 	diff = 0
 	flankpoint = rod.points[1]
 	for i = 2:rod.size+1
@@ -33,13 +33,24 @@ function stabalized(rod::Rod,tol::Real,iter::Int)
 	end
 	diff /=length(rod.points)
 
-	if rand() < exp(-diff)
-		index = trunc(Int64,randb(2,rod.size+1))
-		for j = 1:rod.dim
-			rod.points[index].vec[j] = randb(bounds[j][1],bounds[j][2])
+	# Add 10 percent random solutions into rod
+	if diff < tol
+		replace = sample(2:rod.size+1,trunc(Int64,rod.size*0.1),replace=false)
+		for i in replace
+			rvec = similar(flankpoint.vec)
+			for j = 1:dim
+				rvec[j]= randb(bounds[j][1],bounds[j][2])
+			end
+			rval = f(rvec,rod.params)
+			rod.points[i] = Point(rvec,rval)
+
+			if rval < flankpoint.val
+				flankpoint = rod.points[i]
+			end
 		end
+		rod.points[1] = flankpoint
+		rod.points[rod.size+2] = flankpoint
 	end
-	return diff < tol
 end
 
 # Update rod function
@@ -105,7 +116,8 @@ end
 
 # The main algorithm
 function heatdiff(f::Function,bounds::Vector,params::Vector=[]
-		  ; size::Int=100, influence::Real=0.777, maxiter::Int=10000, stabalizetol::Real=1e-2)
+		  ; size::Int=100, influence::Real=1, maxiter::Int=10000
+		  , stabilizetol::Real=1e-2,influencedecay::Real=0)
 
 	dim = length(bounds)
 	points = Vector{Point}(undef,size+2)
@@ -137,9 +149,12 @@ function heatdiff(f::Function,bounds::Vector,params::Vector=[]
 
 	# Begin main algorithm`
 	iter = 0	
-	while iter < maxiter && !stabalized(rod,stabalizetol,iter)
+	while iter < maxiter
 		updaterod(f,rod)
+		rod.ω = influence*(1 - iter/maxiter)^influencedecay
+		stabilized(f,rod,stabilizetol,iter)
 		iter += 1
 	end
-	return sort(rod.points,by=(x -> x.val))[1]
+	return rod.points
+	#return sort(rod.points,by=(x -> x.val))[1]
 end
