@@ -193,8 +193,6 @@ end
 # velocitybounds: Upper velocity bounds for every dimension
 # velocitydecay: The expoenent in an equation  that lowers the values of velocity bounds every iteration exponentially
 #                < 1 for faster decay, > 1 for slower decay.
-# decayvelocity: True if you want to decay velocity bounds exponentially
-# decayinertia: True if you want to decay inertia exponentially
 # cognitive: The cognitive componenet for the velocity update. 
 # inertiaweight: The constant that affects the cognitives components influence.
 # inertiadecay: The exponent in an equation that lowers of the value of inertiaweight exponentially every iteation.
@@ -224,9 +222,8 @@ end
 #             WARNING: Will increase the running time of the algorithm. =#
 function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 		; maxiter::Int64=50000, plotit::Bool=false, plotiter::Int64=100
-		, clamping::Bool=false, velocitybounds::Vector=[],velocitydecay::Real=1.0
-		, decayvelocity::Bool=false, decayinertia::Bool=false
-		, cognitive::Real=1.49618, inertiaweight::Real=1.0, inertiadecay::Real=1.0
+		, clamping::Bool=false, velocitybounds::Vector=[],velocitydecay::Real=0
+		, cognitive::Real=1.49618, inertiaweight::Real=1.0, inertiadecay::Real=0
 		, social::Real=1.49618, constraint::Bool=false,k::Real=0.777
 		, size::Int64=21, moving::Bool=false, hardbounds::Vector{G}=repeat([(-Inf,Inf)],length(bounds))
 		, lbest::Bool=false, nsize::Int64=floor(Int64,size/6 - 0.5)
@@ -309,10 +306,10 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 			updateSwarm(f,swarm,params)
 
 			#Change bounds for velocity clamp if applicable
-			swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
+			swarm.velocitybounds = velocitybounds*(1 - (i/maxiter)^swarm.δ)
 
 			#Change inertiaweight if applicable
-			swarm.ω = decayinertia ? inertiaweight*(1 - i/maxiter)^swarm.γ : swarm.ω
+			swarm.ω = inertiaweight*(1 - (i/maxiter)^swarm.γ)
 
 			#Plotting every iteation, averaging dimensions
 			x = zeros(Float64,size)
@@ -338,8 +335,8 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 	i = plotit ? plotiter : 0
 	while(i < maxiter && !radiusConverge(convergence,swarm,D,convergencetol))
 		updateSwarm(f,swarm,params)
-		swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
-		swarm.ω = decayinertia ? inertiaweight*(1 - i/maxiter)^swarm.γ : swarm.ω
+		swarm.velocitybounds = velocitybounds*(1 - (i/maxiter)^swarm.δ)
+		swarm.ω = inertiaweight*(1 - (i/maxiter)^swarm.γ)
 		i += 1
 	end
 
