@@ -1,6 +1,8 @@
 ## Optimization and Metaheuristics
 *Some of the classic metaheuristics for real valued functions, and personal attempts at implementating such algorithms. 
 
+**Heat Diff:** A person algorithm I came up with, after inspiration of learing of the Heat Equation in my PDE's class. Maps a bunch of solution vectors onto a "rod", that has fixed endpoints as the current best global solution. The fitness space of each point is used to loosely mirror the "average of your neighbors" concept from the Heat Equation. Then the actual components of the vectors are updated based on the "pull" (or influence in the fitness space) of each neighbor. When stabilization is reached, random points are replaced on the rod with new solutions, and the algorithm continues until the max iteration.
+ 
 **Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
 <br> Velocity Clampming, Inertia Weight (decay potential for both), Constraint Coefficient, Swarm Convergence Testing, and lbest variant using a ring topology.
 
