@@ -78,7 +78,7 @@ min_griewank = 0.0
 # Any dimension
 function Hyperellipsoid(x::Vector,p::Vector)
 	retval = 0
-	for j = 1:lenth(x)
+	for j = 1:length(x)
 		retval += j*j*x[j]*x[j]
 	end
 	return retval
