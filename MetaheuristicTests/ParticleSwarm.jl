@@ -191,13 +191,13 @@ end
 # plotiter: The number of of iterations to plot for the gif
 # clamping: If velocity clamping is desired.
 # velocitybounds: Upper velocity bounds for every dimension
-# velocitydecay: The positive expoenent in an equation that lowers the values of velocity bounds every iteration exponentially
+# velocitydecay: The positive expoenent in an equation that decays velocitybounds. == 1 for linear decay
 #                < 1 for faster initial decay and slower ending decay, > 1 vice versa
-# decayvelocity: True if you want to decay velocity bounds exponentially
-# decayinertia: True if you want to decay inertia exponentially
+# decayvelocity: True if you want to decay velocity bounds
+# decayinertia: True if you want to decay inertia 
 # cognitive: The cognitive componenet for the velocity update. 
 # inertiaweight: The constant that affects the cognitives components influence.
-# inertiadecay: The positive exponent in an equation that lowers of the value of inertiaweight exponentially every iteation.
+# inertiadecay: Affects the decay of inertia. == 1 for linear decay
 #                < 1 for faster initial decay and slower ending decay, > 1 vice versa
 # social: The social component of the velocity update
 # constraint: If the constraint coefficient method is desired
