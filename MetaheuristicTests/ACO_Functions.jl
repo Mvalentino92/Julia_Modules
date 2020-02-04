@@ -71,22 +71,14 @@ function constructpath(ant::Ant,graph::SimpleWeightedGraph,pgraph::SimpleWeighte
 			probabilities[i] = get_weight(pgraph,current,adjacent[i])^α
 			totalpheromones += probabilities[i]
 		end
-		
-		# Compute the sorted indices and reorder probabilities and adjacent sorted like this
 		probabilities /= totalpheromones
-		sortedindices = sortperm(probabilities,rev=true)
-		probabilities[sortedindices]
-		adjacent[sortedindices]
 
-		# Pick a vertex based on probabilities
+		# Pick a vertex based on probabilities, will terminate
 		r = rand()
 		idx = 1
-		while idx < length(probabilities) - 1
-			if r < probabilities[idx] break
-			else
-				probabilities[idx+1] += probabilities[idx]
-				idx += 1
-			end
+		while r > probabilities[idx]
+			probabilities[idx+1] += probabilities[idx]
+			idx += 1
 		end
 
 		# Increment cost, update current and add to path and visited
