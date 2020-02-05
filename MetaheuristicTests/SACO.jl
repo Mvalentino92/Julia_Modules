@@ -1,8 +1,11 @@
 include("ACO_Functions.jl")
+include("GraphUtils.jl")
+using Plots, GraphPlot, Random, Colors
 
 function saco(graph::SimpleWeightedGraph,source::Int,destination::Int;
-	      size::Int=15,evaporationrate::Real=0.35, alpha::Real=0.65,maxiter::Int=1000)
-	
+	      size::Int=15,evaporationrate::Real=0.35, alpha::Real=0.65,
+		  plotit::Bool=false,filename::String="anim.gif",maxiter::Int=1000)
+
 	# The NULL Ant
 	nullant = Ant([],source,destination,Inf,0)
 
@@ -21,6 +24,16 @@ function saco(graph::SimpleWeightedGraph,source::Int,destination::Int;
 	# Create the colony
 	colony = Colony(ants,size,graph,pheromonegraph,evaporationrate)
 
+	# If plotit is true, create some needed variables
+	if plotit
+		h = SimpleGraph(nv(colony.graph))
+		for edge in edges(colony.graph)
+			add_edge!(h,edge.src,edge.dst)
+		end
+		edgelist = collect(edges(h))
+		colors_per_iter = Vector()
+		colors = distinguishable_colors(size+1,colorant"lightblue")
+	end
 	# Begin to run the algorithm
 	for i = 1:maxiter
 
@@ -39,6 +52,28 @@ function saco(graph::SimpleWeightedGraph,source::Int,destination::Int;
 
 		# Update the pheromones
 		laypheromone(colony)
+
+		# If plotit is true, add to the color_vector
+		if plotit
+			push!(colors_per_iter,get_color_code(edgelist,colony.ants,colony.size))
+		end
+	end
+
+	# If plotit is true, create a gif
+	if plotit
+		anim=Animation()
+		for i = 1:maxiter
+    		p=gplot(h,edgestrokec=colors[colors_per_iter[i]],
+			        nodelabel=1:nv(h),layout=circular_layout)
+    		output = compose(p,
+        		(context(), Compose.text(1, 1, "Julia")),
+        		(context(), rectangle(), fill("white")))
+    		j=length(anim.frames) + 1
+    		tmpfilename=joinpath(anim.dir,@sprintf("%06d.png",j))
+    		Compose.draw(PNG(tmpfilename),output)
+    		push!(anim.frames, tmpfilename)
+		end
+		gif(anim, string("/mnt/chromeos/MyFiles/Downloads/OptGifs/",filename), fps = 5)
 	end
 
 	# Return ant with the best path

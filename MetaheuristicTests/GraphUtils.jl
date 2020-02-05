@@ -1,4 +1,4 @@
-using LightGraphs, SimpleWeightedGraphs, StatsBase
+using LightGraphs, SimpleWeightedGraphs
 
 # Gets an edge from a set of edges, given the source and destination vertices
 function get_edge(edges::Vector,src::Real,dst::Real,turn::Int64=0)
@@ -62,11 +62,44 @@ function gen_graph(n::Int,p::Float64)
 	end
 
 	# Take random sample
-	m = trunc(Int64,mx*p)	
+	m = trunc(Int64,mx*p)
 	take = sample(1:mx,m,replace=false)
 	sources = sources[take]
 	destinations = destinations[take]
 
 	weights = map(x -> rand()*1000,1:m)
 	return SimpleWeightedGraph(sources,destinations,weights)
+end
+
+# Convert a weighted graph to Simple
+function weight_to_non(g::SimpleWeightedGraph)
+	retg = SimpleGraph(nv(g))
+	for edge in edges(g)
+		add_edge!(retg,edge.src,edge.dst)
+	end
+	return retg
+end
+
+# Returns a vector of integers corresponding to colors
+function get_color_code(edgelist::Vector,ants::Vector{Ant},size::Int)
+
+	# The matrix that will be condensed to a single Vector
+	edgelen = length(edgelist)
+	pathmatrix = ones(Int64,size,edgelen)
+
+	# Begin to iterate every ant, and update the matrix
+	for i = 1:size
+		# For each ant path, create an edge edgelist
+		ap = ants[i].path
+		antedges = [ap[j] < ap[j+1] ? Edge(ap[j],ap[j+1]) :
+		           Edge(ap[j+1],ap[j]) for j = 1:length(ap)-1]
+		# For every edge in this list, see if it occurs in edgelist
+		for antedge in antedges
+			match = [j for j in 1:edgelen if edgelist[j] == antedge]
+			if !isempty(match)
+				pathmatrix[i,match[1]] = i+1
+			end
+		end
+	end
+	return maximum(pathmatrix,dims=1)[1,:]
 end
