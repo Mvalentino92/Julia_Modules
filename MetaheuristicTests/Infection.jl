@@ -1,4 +1,5 @@
 using StatsBase
+using Plots
 byperson = 0
 byinjection = 0
 
@@ -75,13 +76,15 @@ end
 # The number of infected in the population
 # The infection rate (potentially change this)
 function inject(epidemic::Epidemic)
+	val = 1
 	for person in epidemic.population
 		if person.state == SUSCEPTIBLE
 			r = rand()
-			p = exp(-epidemic.infected/epidemic.susceptible)*
-			    epidemic.infectionrate
+			p = exp(-epidemic.infected/(epidemic.susceptible+1))*
+			    epidemic.infectionrate*val
 			if r < p
 				global byinjection += 1
+				val *= 0.5
 				person.strand = epidemic.deathstrain
 				person.strandseverity = epidemic.deathseverity
 				person.state = INFECTED
@@ -253,7 +256,7 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 		while epidemic.recovered < epidemic.size
 			turns += 1
 			# Potentially infect a random person with deathstrain
-			inject(epidemic)
+			if epidemic.infected < epidemic.susceptible*0.05 inject(epidemic) end
 
 			# Update everyones random walk
 			walk(f,params,epidemic)
@@ -262,6 +265,9 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 			spreadandrecover(epidemic)
 
 		end
+		#=x = [epidemic.population[i].vec[1] for i in 1:epidemic.size]
+		y = [epidemic.population[i].vec[2] for i in 1:epidemic.size]
+		plot(seriestype=:scatter,x,y,xlim=(-2.048,2.048),ylim=(-2.048,2.048))=#
 
 		# Calculate new bounds of the quarantine,
 		# and decrease stepsize
@@ -315,5 +321,9 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 	end
 
 	# Return the deathstrain
+	println("By person: ",byperson)
+	println("By injection: ",byinjection)
+	global byperson = 0
+	global byinjection = 0
 	return epidemic.deathstrain,epidemic.deathseverity
 end
