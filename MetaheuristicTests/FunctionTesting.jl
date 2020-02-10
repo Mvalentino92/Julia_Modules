@@ -66,7 +66,7 @@ min_easom = -1.0
 function Griewank(x::Vector,p::Vector)
 	c1 = 0
 	c2 = 1
-	for i = 1:length(x)
+	for j = 1:length(x)
 		c1 += x[j]*x[j]
 		c2 *= cos(x[j]/sqrt(j))
 	end
@@ -78,7 +78,7 @@ min_griewank = 0.0
 # Any dimension
 function Hyperellipsoid(x::Vector,p::Vector)
 	retval = 0
-	for j = 1:length(x)
+	for j = 1:lenth(x)
 		retval += j*j*x[j]*x[j]
 	end
 	return retval
@@ -123,7 +123,3 @@ min_schwefel = 0.0
 function createbounds(bounds::Tuple,dim::Int)
 	return repeat([bounds],dim)
 end
-
-
-
-

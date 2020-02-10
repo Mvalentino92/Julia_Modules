@@ -1,4 +1,6 @@
 using StatsBase
+byperson = 0
+byinjection = 0
 
 # Some constants to represent states
 const SUSCEPTIBLE = 0
@@ -79,6 +81,7 @@ function inject(epidemic::Epidemic)
 			p = exp(-epidemic.infected/epidemic.susceptible)*
 			    epidemic.infectionrate
 			if r < p
+				global byinjection += 1
 				person.strand = epidemic.deathstrain
 				person.strandseverity = epidemic.deathseverity
 				person.state = INFECTED
@@ -145,6 +148,7 @@ function spreadandrecover(epidemic::Epidemic)
 			if dist <= epidemic.infectionradius
 				# If become infected, update strand with strain of infected
 				if rand() < exp(-dist/epidemic.infectionradius)*epidemic.infectionrate
+					global byperson += 1
 					epidemic.population[s].strand = epidemic.population[i].strain
 					epidemic.population[s].strandseverity = epidemic.population[i].severity
 					epidemic.population[s].state = INFECTED
@@ -185,7 +189,7 @@ function shrink(epidemic::Epidemic)
 			                   quarantine[j][2] : epidemic.population[i].vec[j]
 		end
 	end
-	return map(x -> (x[1]-abs(x[1]*rand()),x[2]+abs(x[2]*rand())),quarantine)
+	return map(x -> (x[1]-(x[2] - x[1])*0.2,x[2]+(x[2] - x[1])*0.2),quarantine)
 end
 
 
@@ -218,19 +222,21 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 	infect = sample(1:size,source,replace=false)
 	for i in infect
 		population[i].state = INFECTED
+		population[i].strand = deathstrain
+		population[i].severity = deathseverity
 	end
 
 	# If stepsize wasn't specified, supply it based on bounds
 	if isempty(stepsize)
 		stepsize = zeros(Float64,dim,dim)
 		for i = 1:dim
-			stepsize[i,i] = sqrt((bounds[i][2] - bounds[i][1]))
+			stepsize[i,i] =(bounds[i][2] - bounds[i][1])*0.05
 		end
 	end
 
 	# If infectionradius wasn't specified, supply it
 	infectionradius = infectionradius < Inf ? infectionradius : 
-	                  sqrt(sum(stepsize))
+	                  sqrt(mapreduce(x -> x^2,+,stepsize))
 
 
 	# Create the Epidemic
@@ -241,7 +247,7 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 
 
 	# For required iterations, run the simulation
-	for i in 1:maxiter
+	for k in 1:maxiter
 		turns = 0
 		# While the population is still not entirely recovered
 		while epidemic.recovered < epidemic.size
@@ -270,15 +276,17 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 		infect = sample(1:size,source,replace=false)
 		for i in infect
 			epidemic.population[i].state = INFECTED
+			epidemic.population[i].strand = epidemic.deathstrain
+			epidemic.population[i].strandseverity = epidemic.deathseverity
 		end
 
 		# Calculate new step size based on quanrantine
 		for i = 1:epidemic.dim
-			epidemic.stepsize[i,i] = sqrt((epidemic.quarantine[i][2] - epidemic.quarantine[i][1]))
+			epidemic.stepsize[i,i] = (epidemic.quarantine[i][2] - epidemic.quarantine[i][1])*0.05
 		end
 
 		# Calculate infection radius
-		epidemic.infectionradius = sqrt(sum(epidemic.stepsize))
+		epidemic.infectionradius = sqrt(mapreduce(x -> x^2,+,epidemic.stepsize))
 
 		# Calculate new state counts
 		epidemic.susceptible = size-source
@@ -290,12 +298,20 @@ function sir(f::Function,bounds::Vector,params::Vector=[]
 		println("Stepsize: ",epidemic.stepsize)
 		println("Turns: ",turns)
 		println("\n")=#
-		for person in epidemic.population
+
+		if sum(epidemic.stepsize) < 1e-9 
+			println(k)
+			println("By person: ",byperson)
+			println("By injection: ",byinjection)
+			global byperson = 0
+			global byinjection = 0
+			return epidemic.deathstrain,epidemic.deathseverity
+		end
+		#=for person in epidemic.population
 			println(person.vec)
 			println(person.strain)
 			println()
-		end
-		println("\n\n")
+		end=#
 	end
 
 	# Return the deathstrain
