@@ -1,4 +1,4 @@
-using LightGraphs, SimpleWeightedGraphs
+using LightGraphs, SimpleWeightedGraphs, StatsBase
 
 # Gets an edge from a set of edges, given the source and destination vertices
 function get_edge(edges::Vector,src::Real,dst::Real,turn::Int64=0)
@@ -70,6 +70,25 @@ function gen_graph(n::Int,p::Float64)
 	weights = map(x -> rand()*1000,1:m)
 	return SimpleWeightedGraph(sources,destinations,weights)
 end
+
+# Generate a random collected graph with k vertices and n edges
+function gen_graphq(k::Int,n::Int)
+	retg = SimpleWeightedGraph(k)
+	for i = 1:k-1
+		add_edge!(retg,i,i+1,rand()*k)
+	end
+	for i = k:n
+		u = rand(1:k)
+		v = rand(1:k)
+		while has_edge(retg,u,v) || u == v
+			u = rand(1:k)
+			v = rand(1:k)
+		end
+		add_edge!(retg,u,v,rand()*k/2)
+	end
+	return retg
+end
+
 
 # Convert a weighted graph to Simple
 function weight_to_non(g::SimpleWeightedGraph)
