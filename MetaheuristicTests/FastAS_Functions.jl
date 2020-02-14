@@ -51,16 +51,6 @@ function constructpath(ant::Ant,g::SimpleGraph, attributes::Matrix,
 		# Filter these by what is in visited
 		adjacent = filter(v -> !(v in visited),adjacent)
 
-		# If adjacent has destination, clearly go to it
-		if ant.destination in adjacent
-            idw = get_edge_index(edgelist,current,ant.destination)
-			cost += attributes[1,idw]
-			current = ant.destination
-			push!(path,current)
-			continue
-		end
-
-
 		# If there are no available neighbors, this is a deadend
 		# Keep this current node in visited (as to not hit this deadend again)
 		# and revert current back to previous node. Remove current from path,
