@@ -19,7 +19,7 @@ end
 # graph: The original graph
 # pheromoneGraph: A structural copy of the original graph, where the weights are the phermone levels
 # evaporationRate: The evaporation rate for all trails every iteration
-mutable struct Colony
+mutable struct Colony2
 	ants::Vector{Ant}
 	size::Int
 	mg::MetaGraph
@@ -45,15 +45,6 @@ function constructpath(ant::Ant,mg::MetaGraph,α::Real,β::Real,γ::Real)
 
 		# Filter these by what is in visited
 		adjacent = filter(v -> !(v in visited),adjacent)
-
-		# If adjacent has destination, clearly go to it
-		if ant.destination in adjacent
-			cost += get_prop(mg,current,ant.destination,:weight)
-			current = ant.destination
-			push!(path,current)
-			continue
-		end
-
 
 		# If there are no available neighbors, this is a deadend
 		# Keep this current node in visited (as to not hit this deadend again)
