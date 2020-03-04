@@ -16,7 +16,7 @@ end
 
 # Function to check for convergence
 function converged(generation::Generation,tol::Real)
-	temp = mapreduce(vec -> abs.(vec.phenotype .- generation.fittest.phenotype),+,generation.parents)
+	temp = mapreduce(parent -> abs.(parent.phenotype .- generation.fittest.phenotype),+,generation.parents)
 	dist = sum(temp)/length(temp)
 	return dist < tol
 end
@@ -27,10 +27,11 @@ end
 
 # Generates and mutates a child population
 function breed_and_mutate(f::Function,params::Vector,generation::Generation)
-	temp = map(gene -> gene.phenotype .+ 
-			   [rand() < generation.mutationrate ? 1 : 0 for i = 1:generation.dims].*
-			   randn(generation.dims),generation.parents)
-	generation.children = map(x -> Gene(x,f(x,params)),temp)
+	generation.children = map(parent -> begin
+					  child = parent.phenotype .+
+					  [rand() < generation.mutationrate ? 1 : 0 for i = 1:generation.dims].*
+					  randn(generation.dims)
+				  Gene(child,f(child,params)) end, generation.parents)
 end
 
 # Selects the top to survive
