@@ -5,7 +5,7 @@
 
 **SACO.jl:** The Simple Ant Colony Opitimization algorithm. No heuristic information is used to guide the ants on their search, only phermone trails (positive feedback loop). Uses WeightedSimpleGraphs library. 
 
-**AS.jl:** The Ant System algorithm. Adds a heurstic component to SACO. Can modify and change several parameters. Uses the MetaGraphs library.
+**AS.jl:** The Ant System algorithm. Adds a heurstic component to SACO. Uses the MetaGraphs library.
 
 **FastAS.jl:** Another implementation of the Ant System Algorithm. The performance of SimpleWeightedGraphs (used in SACO), was superior to MetaGraphs (used in AS), but good random graph generation wasn't avaiable for SimpleWeightedGraphs. My soltution was to handle the phermone trails and weights myself, just using the LightGraphs library (SimpleWeighted and Meta are extensions). And accessing needed values using a double binary search on primitive 2xn arrays. Achieved the performance (even a little better), of SimpleWeighted, with the benefit of random graph generation.
 
