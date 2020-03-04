@@ -3,6 +3,12 @@
 
 ### Ant Colony Optimization ###
 
+**SACO.jl:** The Simple Ant Colony Opitimization algorithm. No heuristic information is used to guide the ants on their search, only phermone trails (positive feedback loop). Uses WeightedSimpleGraphs library. 
+
+**AS.jl:** The Ant System algorithm. Adds a heurstic component to SACO. Can modify and change several parameters. Uses the MetaGraphs library.
+
+**FastAS.jl:** Another implementation of the Ant System Algorithm. The performance of SimpleWeightedGraphs (used in SACO), was superior to MetaGraphs (used in AS), but good random graph generation wasn't avaiable for SimpleWeightedGraphs. My soltution was to handle the phermone trails and weights myself, just using the LightGraphs library (SimpleWeighted and Meta are extensions). And accessing needed values using a double binary search on primitive 2xn arrays. Achieved the performance (even a little better), of SimpleWeighted, with the benefit of random graph generation.
+
 **Heat Diff:** A person algorithm I came up with, after inspiration of learing of the Heat Equation in my PDE's class. Maps a bunch of solution vectors onto a "rod", that has fixed endpoints as the current best global solution. The fitness space of each point is used to loosely mirror the "average of your neighbors" concept from the Heat Equation. Then the actual components of the vectors are updated based on the "pull" (or influence in the fitness space) of each neighbor. When stabilization is reached, random points are replaced on the rod with new solutions, and the algorithm continues until the max iteration.
  
 **Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
