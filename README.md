@@ -13,6 +13,8 @@
 <br>
 
 **Heat Diff:** A person algorithm I came up with, after inspiration of learing of the Heat Equation in my PDE's class. Maps a bunch of solution vectors onto a "rod", that has fixed endpoints as the current best global solution. The fitness space of each point is used to loosely mirror the "average of your neighbors" concept from the Heat Equation. Then the actual components of the vectors are updated based on the "pull" (or influence in the fitness space) of each neighbor. When stabilization is reached, random points are replaced on the rod with new solutions, and the algorithm continues until the max iteration.
+
+**Infection.jl:** Another attempt at a meatheuristic algorithm for function minimization. Models a state-based infection spreading, where solutions can be in one of several states: Susceptible, Infected, Recovered. All solutions maintain a personal best history, and when infected explore the area around the infecting solutions personal best. In order to explore the search space efficiently, multiple epidemics are ran, with each subsequent run focusing on a smaller subset of the solution space. Convergence is achieved through enough iterations. Recovery and infections rates are among parameters that can be tweaked for performance.
  
 **Particle Swarm:** Implemented the basic PSO algorithms, with features such as:
 <br> Velocity Clampming, Inertia Weight (decay potential for both), Constraint Coefficient, Swarm Convergence Testing, and lbest variant using a ring topology.
