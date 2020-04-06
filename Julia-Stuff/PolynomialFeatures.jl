@@ -24,18 +24,30 @@ function unipermutations(xs)
 	return retval
 end
 
-function partitions(n)
-	return hpartitions(n,1)
-end
-
-function hpartitions(n,k)
+function partitions(n,k=1)
 	if n == 1 return [[1]] end
 	retval = [[n]]
 	while k <= n/2
-		append!(retval,map(x -> prepend!(x,k),hpartitions(n-k,k)))
+		append!(retval,map(x -> prepend!(x,k),partitions(n-k,k)))
 		k += 1
 	end
 	return retval
+end
+
+function fillpartitions(n,depth)
+	return collect(Iterators.flatten(map(x -> unipermutations(append!(x,zeros(depth - length(x)))),partitions(n))))
+end
+
+function pf(order,depth)
+	retval = []
+	for i = 1:order
+		append!(retval,fillpartitions(i,depth))
+	end
+	return retval
+end
+
+function transform(X,py)
+	mapslices(features -> map(powers -> mapreduce((feature,power) -> feature^power,*,features,powers),py),X,dims=2)
 end
 
 function choose(n,r)
