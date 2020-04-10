@@ -49,6 +49,8 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 
 **NodeStuff.jl:** Practice with making custom classes in Julia. Just wrote most a Doubly LinkedList, nothing spectacular.
 
+**Palindrome.jl:** Uses Evolutionary Algorithms to construct palindromes with math words in them. 
+
 **PolynomialFeatures.jl:** Implements the same functionality as sklearns PolynomialFeatures.
 
 **Lagrange.jl:** Implements Lagrange interpolation for any amount of points. Very silly to give it a lot of points, as a polynomial with a high order is wildly unstable. But I did this cool way to multiply all the (x-?)(x+?)(x+?)...(x-?) together using the Choose function. So there was that.
