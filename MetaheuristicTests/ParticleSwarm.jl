@@ -276,7 +276,7 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 		#For every dimension of each particle
 		for j = 1:dim
 			position[j] = randb(bounds[j][1],bounds[j][2])
-			velocity[j] += moving ? (rand() - 0.5)*2.0 : 0.0
+			velocity[j] = moving ? (rand() - 0.5)*2.0 : 0.0
 		end
 
 		#If tabu assist is on, and value exists, use this position instead
@@ -306,13 +306,6 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 	#Plot if applicable, overrides maxiter and convergence
 	if plotit
 		@gif for i = 1:plotiter
-			updateSwarm(f,swarm,params)
-
-			#Change bounds for velocity clamp if applicable
-			swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
-
-			#Change inertiaweight if applicable
-			swarm.ω = decayinertia ? inertiaweight*(1 - (i/maxiter)^swarm.γ) : swarm.ω
 
 			#Plotting every iteation, averaging dimensions
 			x = zeros(Float64,size)
@@ -331,6 +324,15 @@ function pswarm(f::Function, bounds::Vector{T}, params::Vector=[]
 			x /= xdiv
 			y /= ydiv
 			plot(x,y,seriestype=:scatter,xlim=swarm.hardbounds[1],ylim=swarm.hardbounds[2])
+
+			# Update swarm
+			updateSwarm(f,swarm,params)
+
+			#Change bounds for velocity clamp if applicable
+			swarm.velocitybounds = decayvelocity ? velocitybounds*(1 - (i/maxiter)^swarm.δ) : swarm.velocitybounds
+
+			#Change inertiaweight if applicable
+			swarm.ω = decayinertia ? inertiaweight*(1 - (i/maxiter)^swarm.γ) : swarm.ω
 		end
 	end
 
