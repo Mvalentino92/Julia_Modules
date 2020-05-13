@@ -39,6 +39,8 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 ## Julia Stuff:
 *Random functions and things I wrote in Julia*
 
+**CompGraph.jl:** Messing around with building Computation Graphs for evaluating expressions. Nothing crazy, just a POC. Might clean it up and add more functionality in the future.  
+
 **DeviseSum.jl:** Given a target number n and a set of numbers N, this returns a sum of the numbers from N (repeats allowed) that result in n if possible. For instance n = 17, N = {2,5,7}. Solution = 2 + 5 + 5 + 5
 
 **EightPuzzle.jl:** Solves the EightPuzzle problem using the A* algorithm.
