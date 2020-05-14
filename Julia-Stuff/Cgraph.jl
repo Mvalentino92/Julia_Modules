@@ -1,0 +1,220 @@
+# Node for Computation Graphs
+# operator and value will both be Strings.
+# operator, so the expression can be printed out easily.
+# value simply because they're will be variables. 
+# Use dictionaries to grab actual function and plugged in value supplied by user.
+mutable struct Node
+	op::String
+	val::Union{String,Nothing}
+	left::Union{Node,Nothing}
+	right::Union{Node,Nothing}
+end
+
+mutable struct CG
+	root::Node
+	rootprime::Union{Node,Nothing}
+end
+
+# Set operator for a Node
+function setop!(node::Node,op::String)
+	node.op = op
+end
+
+# Set the value for a Node
+function setval!(node::Node,val::String)
+	node.val = val
+end
+
+# Set left child for Node
+function setleft!(node::Node,child::Node)
+	node.left = child
+end
+
+# Set right child for Node
+function setright!(node::Node,child::Node)
+	node.right = child
+end
+
+# The Dictionary of operators
+OPS = Dict("+" => +, "-" => -, "*" => *, "/" => /, "^" => ^,
+	   "sin" => sin, "cos" => cos, "tan" => tan, "sinh" => sinh, "cosh" => cosh, "tanh" => tanh,
+	   "exp" => exp, "log" => log, "abs" => abs, "" => identity)
+
+# The list of binary ops to be split on in order of precedence.
+BINOPS = ["+","-","*","/","^"]
+
+# Fix the negatives in the string
+ops = ['+','-','*','/','^','(',')']
+function fixneg(expr)
+   expr = string("*",expr)
+   expr = string(expr,"*")
+   s = ""
+   i = 2
+   while i < length(expr)
+       if expr[i] == '-' && expr[i-1] in ops
+	   l = 0
+	   r = 0
+	   ss = "(0-"
+	   j = i + 1
+	   while j <= length(expr)
+	       l += expr[j] == '(' ? 1 : 0
+	       r += expr[j] == ')' ? 1 : 0
+	       if expr[j] in ops && l <= r
+		   ss = string(ss,")")
+		   break
+	       else
+		   ss = string(ss,expr[j])
+		   j += 1
+	       end
+	   end
+	   s = string(s,ss)
+	   i = j
+       else
+	   s = string(s,expr[i])
+	   i += 1
+       end
+   end
+   return s
+end
+
+# Function needed to split the expression up to a max of 2 subexpressions around given operator.
+# Doesn't split around parenthesis
+function opsplit(expr::AbstractString,op::String)
+	l = 0; r = 0; s = "";
+	for i = 1:length(expr)
+		char = expr[i]
+		if string(char) == op && l == r
+			return [string(expr[1:i-1]),string(expr[i+1:end])] 
+		end
+		if char == '(' l += 1 end
+		if char == ')' r += 1 end
+	end
+	return [string(expr)]
+end
+
+# Returns the function for this subexpression that contains parenthesis
+function funcarg(expr::AbstractString)
+	i = 1;
+	while expr[i] != '('
+		i += 1
+	end
+	return string(expr[1:i-1]),string(expr[i+1:end-1])
+end
+
+# Main function for Computation Graph construction
+function cgraph(expr::AbstractString)
+
+	# Eliminate whitespace
+	expr = filter(x -> !isspace(x),expr)
+
+	# Fix negatives
+	cpyexpr = deepcopy(expr)
+	while true
+		expr = fixneg(expr)
+		if cpyexpr == expr
+			break
+		else
+			cpyexpr = expr
+		end
+	end
+
+	# Create root to return
+	root = Node("",nothing,nothing,nothing)
+
+	# Call wrapper and return root
+	cgraphwrapper(expr,root)
+
+	return CG(root,nothing)
+end
+
+# Wrapper function that does all work
+function cgraphwrapper(expr::AbstractString,root::Node)
+
+	# Begin to find if there is a split.
+	for op in BINOPS
+		
+		# Seek to split at this operator
+		subexprs = opsplit(expr,op)
+
+		# If there was no split, continue
+		if length(subexprs) == 1 continue end
+
+		# Otherwise, set operator for root
+		setop!(root,op)
+
+		# Create left and right nodes
+		left = Node("",nothing,nothing,nothing)
+		right = Node("",nothing,nothing,nothing)
+
+		# Set them as left and right children for root
+		setleft!(root,left)
+		setright!(root,right)
+
+		# Call recursively with both these as root with subexprs to mutate roots children
+		cgraphwrapper(subexprs[1],left)
+		cgraphwrapper(subexprs[2],right)
+
+		# Return to stop
+		return
+	end
+
+	# ***If you made it here, no splits were found. Time to have a single child for a unary function***
+	
+	# Check if there's parenthesis in general, if so, it's a function
+	if occursin("(",expr)
+		# Find the function and arguments for what must be here
+		op,subexpr = funcarg(expr)
+
+		# Repeat similar process for binary split, but only one child
+		setop!(root,op)
+		left = Node("",nothing,nothing,nothing)
+		setleft!(root,left)
+		cgraphwrapper(subexpr,left)
+		return
+	end
+
+	# Otherwise it's just a value, so simply set it! (if empty string, set as 0!)
+	setval!(root,expr)
+	return
+end
+
+# The evaluation function, passed an optional dictionary that defaults to being empty
+function cgeval(cg::CG;vars::Dict=Dict())
+
+	# Make a deepcopy of Node
+	root = deepcopy(cg.root)
+	
+	# Call the wrapper with the copied root node
+	val = parse(Float64,cgevalwrapper(root,vars))
+
+	# Return val and new compuation graph filled out
+	return val,CG(root,nothing)
+end
+
+# Wrapper function to do all work for evaluation
+function cgevalwrapper(root::Node,vars::Dict)
+
+	# Base case, if there's a value simply return value as a string!
+	if !isnothing(root.val) return string(get(vars,root.val,root.val)) end
+
+	# If there's just a left child and right child, must be binary operator
+	if !isnothing(root.left) && !isnothing(root.right)
+
+		# Get left and right values (parsed as numbers)
+		left = parse(Float64,cgevalwrapper(root.left,vars))
+		right = parse(Float64,cgevalwrapper(root.right,vars))
+
+		# Get op and set the value for this node
+		op = get(OPS,root.op,identity)
+		setval!(root,string(op(left,right)))
+
+		# Return the val
+		return root.val
+	end
+
+	# Otherwise, it must be a single left child, same as above
+	left = parse(Float64,cgevalwrapper(root.left,vars))
+	op = get(OPS,root.op,identity)
+	setval!(root,string(op(left)))
+	return root.val
+end
