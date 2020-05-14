@@ -39,6 +39,8 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 ## Julia Stuff:
 *Random functions and things I wrote in Julia*
 
+**Cgraph.jl:** Cleaned up the *CompGraph.jl* implementation a little and added in actually evaluating an expression with variables. Ran into a problem with things "6*-2", where the minus operator is treated as a negative. Had to replace that expression with "6*(0-2)". Goal is to take a computation graph and return the computation graph of the derivative for symbolic differentation.
+
 **CompGraph.jl:** Messing around with building Computation Graphs for evaluating expressions. Nothing crazy, just a POC. Might clean it up and add more functionality in the future.  
 
 **DeviseSum.jl:** Given a target number n and a set of numbers N, this returns a sum of the numbers from N (repeats allowed) that result in n if possible. For instance n = 17, N = {2,5,7}. Solution = 2 + 5 + 5 + 5
