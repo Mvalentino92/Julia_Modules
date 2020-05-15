@@ -38,7 +38,7 @@ end
 # The Dictionary of operators
 OPS = Dict("+" => +, "-" => -, "*" => *, "/" => /, "^" => ^,
 	   "sin" => sin, "cos" => cos, "tan" => tan, "sinh" => sinh, "cosh" => cosh, "tanh" => tanh,
-	   "exp" => exp, "log" => log, "abs" => abs, "" => identity)
+	   "exp" => exp, "log" => log, "abs" => abs, "_" => -,"" => identity)
 
 # The list of binary ops to be split on in order of precedence.
 BINOPS = ["+","-","*","/","^"]
@@ -162,6 +162,16 @@ function cgraphwrapper(expr::AbstractString,root::Node)
 		if length(subexprs) == 1 continue end
 
 		# Otherwise, set operator for root
+		# If the operator is ^, check for if there's a _ in front and work accordingly
+		if op == "^"
+			if subexprs[1][1] == '_'
+				setop!(root,"_")
+				next = Node("",nothing,nothing,nothing)
+				setleft!(root,next)
+				root = next
+			end
+		end
+				
 		setop!(root,op)
 
 		# Create left and right nodes
@@ -185,7 +195,21 @@ function cgraphwrapper(expr::AbstractString,root::Node)
 
 	# ***If you made it here, no splits were found. Time to have a single child for a unary function***
 	
-	# Check if there's parenthesis in general, if so, it's a function
+	# Check first if the initial char is _, since it may not have brackets
+	if expr[1] == '_'
+		op = "_"
+		subexpr = expr[2:end]
+
+		# Repeat similar process as above
+		setop!(root,op)
+		left = Node("",nothing,nothing,nothing)
+		setleft!(root,left)
+		cgraphwrapper(subexpr,left)
+		return
+	end
+
+	
+	# Check if there's parenthesis in general, if so (and wasn't _), it's a function
 	if occursin("(",expr)
 		# Find the function and arguments for what must be here
 		op,subexpr = funcarg(expr)
