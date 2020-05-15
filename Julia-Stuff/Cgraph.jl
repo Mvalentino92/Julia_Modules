@@ -3,7 +3,7 @@
 # operator, so the expression can be printed out easily.
 # value simply because they're will be variables. 
 # Use dictionaries to grab actual function and plugged in value supplied by user.
-#=mutable struct Node
+mutable struct Node
 	op::String
 	val::Union{String,Nothing}
 	left::Union{Node,Nothing}
@@ -13,7 +13,7 @@ end
 mutable struct CG
 	root::Node
 	rootprime::Union{Node,Nothing}
-end=#
+end
 
 # Set operator for a Node
 function setop!(node::Node,op::String)
