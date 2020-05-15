@@ -39,7 +39,7 @@ Reading *Artificial Intelligence A Systems Approach* by M Tim Jones
 ## Julia Stuff:
 *Random functions and things I wrote in Julia*
 
-**Cgraph.jl:** Cleaned up the *CompGraph.jl* implementation a little and added in actually evaluating an expression with variables. Ran into a problem with things "6*-2", where the minus operator is treated as a negative. Had to replace that expression with "6*(0-2)". Note that for powers if you want -4^2 to equal -16, you must put -(4^2). Writing -4^2 will yield 16, as it interprets is at (-4)^2. Or as an alternative, use _ for negatives instea of -. \_2^4 will yield -16. Goal is to take a computation graph and return the computation graph of the derivative for symbolic differentation.
+**Cgraph.jl:** Cleaned up the *CompGraph.jl* implementation a little and added in actually evaluating an expression with variables. Ran into a problem with things "6*-2", where the minus operator is treated as a negative. Had to replace that expression with "6*(0-2)". Note that for powers if you want -4^2 to equal -16, you must put -(4^2). Writing -4^2 will yield 16, as it interprets is at (-4)^2. Or as an alternative use _ for negatives. This is slightly faster and allows for expected behavior. IE \_2^4 will yield -16. Goal is to take a computation graph and return the computation graph of the derivative for symbolic differentation.
 
 **CompGraph.jl:** Messing around with building Computation Graphs for evaluating expressions. Nothing crazy, just a POC. Might clean it up and add more functionality in the future.  
 
