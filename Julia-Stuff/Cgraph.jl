@@ -3,7 +3,7 @@
 # operator, so the expression can be printed out easily.
 # value simply because they're will be variables. 
 # Use dictionaries to grab actual function and plugged in value supplied by user.
-mutable struct Node
+#=mutable struct Node
 	op::String
 	val::Union{String,Nothing}
 	left::Union{Node,Nothing}
@@ -13,7 +13,7 @@ end
 mutable struct CG
 	root::Node
 	rootprime::Union{Node,Nothing}
-end
+end=#
 
 # Set operator for a Node
 function setop!(node::Node,op::String)
@@ -38,7 +38,7 @@ end
 # The Dictionary of operators
 OPS = Dict("+" => +, "-" => -, "*" => *, "/" => /, "^" => ^,
 	   "sin" => sin, "cos" => cos, "tan" => tan, "sinh" => sinh, "cosh" => cosh, "tanh" => tanh,
-	   "exp" => exp, "log" => log, "abs" => abs, "_" => -,"" => identity)
+	   "exp" => exp, "log" => log, "abs" => abs, "_" => -,"sqrt" => sqrt, "" => identity)
 
 # The list of binary ops to be split on in order of precedence.
 BINOPS = ["+","-","*","/","^"]
@@ -46,58 +46,30 @@ BINOPS = ["+","-","*","/","^"]
 # Function to replace 6*-2 with 6*(0-2)
 function fixneg(expr::AbstractString)
 
-	# Replace all -- with +
+	# Replace unecessary things with plus and minus
 	expr = replace(expr,"--" => "+")
+	expr = replace(expr,"+-" => "-")
+	expr = replace(expr,"-+" => "-")
 
 	# Add a "*" to beginning and end, (so the function wont go out of bounds)
 	expr = string("*",expr)
 	expr = string(expr,"*")
 
 	# Call wrapper, but the * from beginning
-	return fixnegwrapper(expr)[2:end-1]
-end
-
-startops = ['+','*','/','^','(']
-endops = ['+','-','*','/','^',')']
-# Utility function for fixnegs
-function addp(expr::AbstractString)
-	
-	# Find index that an operator first occurs in while l and r are equal
-	i = 1; l = 0; r = 0;
-	while !any(map(x -> x == expr[i],endops)) || l != r
-		l += expr[i] == '(' ? 1 : 0
-		r += expr[i] == ')' ? 1 : 0
-		i += 1
-	end
-
-	# Return new expr
-	front = string(expr[1:i-1],")")
-	whole = string(front,expr[i:end])
-
-	return whole
+	return fixnegwrapper(expr)
 end
 
 # Wrapper for fixing negatives in string
+startops = ['*','/','^','(']
 function fixnegwrapper(expr::AbstractString)
+	retval = ""
+	for i = 2:length(expr)-1
+		retval = string(retval,expr[i] == '-' && expr[i-1] in startops ? "_" : expr[i])
+	end
 
-	# Base case, if there's no splits return
-	exprs = split(expr,"-",limit=2)
-        if length(exprs) == 1 return exprs[1] end
-           
-	# Otherwise build return value based on split
-        retval = ""
-        if exprs[1][end] in startops
-		retval = string(exprs[1],"(0-")
-		exprs[2] = addp(exprs[2])
-           	retval = string(retval,fixnegwrapper(exprs[2]))
-        else
-		retval = string(exprs[1],"-")
-		retval = string(retval,fixnegwrapper(exprs[2]))
-        end
-	return string(retval)
+	return retval
 end
 
-forwarsdops = ["+","*","^"]
 backwardops = ["-","/"]
 # Function needed to split the expression up to a max of 2 subexpressions around given operator.
 # Doesn't split around parenthesis
@@ -169,6 +141,7 @@ function cgraphwrapper(expr::AbstractString,root::Node)
 				next = Node("",nothing,nothing,nothing)
 				setleft!(root,next)
 				root = next
+				subexprs[1] = subexprs[1][2:end]
 			end
 		end
 				
@@ -228,10 +201,10 @@ function cgraphwrapper(expr::AbstractString,root::Node)
 end
 
 # The evaluation function, passed an optional dictionary that defaults to being empty
-function cgeval(cg::CG;vars::Dict=Dict())
+function cgeval(node::Node;vars::Dict=Dict())
 
 	# Make a deepcopy of Node
-	root = deepcopy(cg.root)
+	root = deepcopy(node)
 	
 	# Call the wrapper with the copied root node
 	val = parse(Float64,cgevalwrapper(root,vars))
@@ -266,4 +239,248 @@ function cgevalwrapper(root::Node,vars::Dict)
 	op = get(OPS,root.op,identity)
 	setval!(root,string(op(left)))
 	return root.val
+end
+
+# Reach node with actual value
+function dval(root::Node,vars::String)
+	# Set as 1 if matches vars or 0 otherwise
+	setval!(root,root.val == vars ? "1" : "0")
+	return root
+end
+
+# Addition for derivative
+function dadd(root::Node,vars::String)
+	# Simply add derivs
+	newleft = derivewrapper(root.left,vars)
+	setleft!(root,newleft)
+
+	newright = derivewrapper(root.right,vars)
+	setright!(root,newright)
+	return root
+end
+
+# Subtraction for derivative
+function dminus(root::Node,vars::String)
+	# Simply subtract the deriv of each side
+	newleft = derivewrapper(root.left,vars)
+	setleft!(root,newleft)
+
+	newright = derivewrapper(root.right,vars)
+	setright!(root,newright)
+	return root
+end
+
+# Multiplication, using product rule
+function dmult(root::Node,vars::String,addi::Bool)
+
+	# Create left and right nodes that are multiplication
+	mleft = Node("*",nothing,nothing,nothing)
+	mright = Node("*",nothing,nothing,nothing)
+	
+	# Set children of left f'*g
+	setleft!(mleft,derivewrapper(root.left,vars))
+	setright!(mleft,root.right)
+
+	# Set children of right f*g'
+	setleft!(mright,root.left)
+	setright!(mright,derivewrapper(root.right,vars))
+
+	# Set these as children of root, after changing op to +
+	setop!(root,addi ? "+" : "-")
+	setleft!(root,mleft)
+	setright!(root,mright)
+
+	return root
+end
+
+# Division, using quotient rule
+function ddiv(root::Node,vars::String)
+
+	# Create left node from product rule
+	subleft = dmult(deepcopy(root),vars,false)
+
+	# Create right node, g*g
+	mright = Node("*",nothing,nothing,nothing)
+	setleft!(mright,deepcopy(root.right))
+	setright!(mright,deepcopy(root.right))
+
+	# Keep op of root, it's already division, just change children
+	setleft!(root,subleft)
+	setright!(root,mright)
+
+	return root
+end
+
+function dpow(root::Node,vars::String)
+
+	#Create left that is n*d/dx(x) (chain rule)
+	mleft = Node("*",nothing,nothing,nothing)
+
+	#Set it's left simply as root.right
+	setleft!(mleft,deepcopy(root.right))
+
+	# Set it's right as the deriv of root.left (chain rule)
+	setright!(mleft,derivewrapper(root.left,vars))
+
+	# Create right child with "^"
+	pright = Node("^",nothing,nothing,nothing)
+
+	# Set left child of pright by cloning root.left
+	setleft!(pright,deepcopy(root.left))
+
+	# Create it's right child, with "-"
+	pright_right = Node("-",nothing,nothing,nothing)
+
+	# Set the left child as a copy of root.right
+	setleft!(pright_right,deepcopy(root.right))
+
+	# Set right child as 1
+	setright!(pright_right,Node("","1",nothing,nothing))
+
+	# Set right child of pright
+	setright!(pright,pright_right)
+
+	# Finally change op of root, and set children
+	setop!(root,"*")
+	setleft!(root,mleft)
+	setright!(root,pright)
+
+	return root
+end
+
+# Function for negatives, simply return 0 - deriv
+function dneg(root::Node,vars::String)
+
+	# Set op to -
+	setop!(root,"-")
+
+	# Set right to left
+	setright!(root,deepcopy(root.left))
+
+	# Set left to new node of zeros
+	setleft!(root,Node("","0",nothing,nothing))
+
+	return root
+end
+
+# Function for sin, chain rule
+function dsin(root::Node,vars::String)
+
+	# Create left child which is cosine of root.left
+	l = Node("cos",nothing,nothing,nothing)
+	setleft!(l,root.left)
+
+	# Set left and right of root
+	setright!(root,derivewrapper(root.left,vars))
+	setleft!(root,l)
+
+	# Change operator of of root
+	setop!(root,"*")
+
+	return root
+end
+
+# Function for cos, very similar to dsin but need a negative
+function dcos(root::Node,vars::String)
+	# Create left child which is cosine of root.left
+	l = Node("sin",nothing,nothing,nothing)
+	setleft!(l,root.left)
+
+	# Set left and right of root
+	setright!(root,derivewrapper(root.left,vars))
+	setleft!(root,l)
+
+	# Change operator of of root
+	setop!(root,"*")
+
+	addneg = Node("_",nothing,nothing,nothing)
+	setleft!(addneg,root)
+
+	return addneg
+end
+
+# Function for exp, similar to dsin, but just use exp
+function dexp(root::Node,vars::String)
+	# Create left child which is cosine of root.left
+	l = Node("exp",nothing,nothing,nothing)
+	setleft!(l,root.left)
+
+	# Set left and right of root
+	setright!(root,derivewrapper(root.left,vars))
+	setleft!(root,l)
+
+	# Change operator of of root
+	setop!(root,"*")
+
+	return root
+end
+
+# Function for log, just original divided by deriv
+function dlog(root::Node,vars::String)
+
+	# Create right child for 1/x
+	dright = Node("/",nothing,nothing,nothing)
+
+	# Set it's children
+	setleft!(dright,Node("","1",nothing,nothing))
+	setright!(dright,root.left)
+
+	# Set children for root and change sign
+	setleft!(root,derivewrapper(root.left,vars))
+	setright!(root,dright)
+	setop!(root,"*")
+
+	return root
+end
+
+# Function for sqrt, convert to ^ first
+function dsqrt(root::Node,vars::String)
+
+	# Change op
+	setop!(root,"^")
+
+	# Add right child
+	setright!(root,Node("","0.5",nothing,nothing))
+
+	# now call the deriv function for ^
+	return dpow(root,vars)
+end
+
+
+# Derivative of function
+function deriv(cg::CG,vars::String)
+
+	# Clone the cg for deriv
+	cg.rootprime = deepcopy(cg.root)
+
+	# Pass the rootnode to wrapper
+	cg.rootprime = derivewrapper(cg.rootprime,vars)
+end
+
+# Wrapper function for derivative
+function derivewrapper(mainroot::Node,vars::String)
+	
+	# Pass a copy
+	root = deepcopy(mainroot)
+
+	# Base case if actual value
+	if !isnothing(root.val) return dval(root,vars) end
+
+	# Other base case for identity
+	if root.op == "" return derivewrapper(root.left,vars) end
+
+	# Other base case for neg!
+	if root.op == "_" return derivewrapper(dneg(root,vars),vars) end
+
+	# Check what operation to use
+	if root.op == "+" return dadd(root,vars) end
+	if root.op == "-" return dminus(root,vars) end
+	if root.op == "*" return dmult(root,vars,true) end
+	if root.op == "/" return ddiv(root,vars) end
+	if root.op == "^" return dpow(root,vars) end
+	if root.op == "sin" return dsin(root,vars) end
+	if root.op == "cos" return dcos(root,vars) end
+	if root.op == "exp" return dexp(root,vars) end
+	if root.op == "log" return dlog(root,vars) end
+	if root.op == "sqrt" return dsqrt(root,vars) end
 end
